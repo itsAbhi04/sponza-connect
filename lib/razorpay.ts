@@ -1,4 +1,5 @@
 import Razorpay from "razorpay"
+import axios from "axios"
 import crypto from "crypto"
 
 if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
@@ -67,30 +68,50 @@ export async function createCustomer(name: string, email: string, contact?: stri
   }
 }
 
-export async function createPayout(amount: number, accountNumber: string, ifsc: string, purpose = "payout") {
+
+export async function createPayout(
+  amount: number,
+  accountNumber: string,
+  ifsc: string,
+  purpose = "payout"
+) {
   try {
-    const payout = await razorpay.payouts.create({
-      account_number: process.env.RAZORPAY_ACCOUNT_NUMBER!,
-      amount: amount * 100, // Convert to paise
-      currency: "INR",
-      mode: "IMPS",
-      purpose,
-      fund_account: {
-        account_type: "bank_account",
-        bank_account: {
-          name: "Beneficiary Name",
-          ifsc,
-          account_number: accountNumber,
+    const response = await axios.post(
+      "https://api.razorpay.com/v1/payouts",
+      {
+        account_number: process.env.RAZORPAYX_ACCOUNT_NUMBER!,
+        fund_account: {
+          account_type: "bank_account",
+          bank_account: {
+            name: "Beneficiary Name",
+            ifsc,
+            account_number: accountNumber,
+          },
         },
+        amount: amount * 100, // in paise
+        currency: "INR",
+        mode: "IMPS",
+        purpose,
+        queue_if_low_balance: true,
       },
-      queue_if_low_balance: true,
-    })
-    return payout
-  } catch (error) {
-    console.error("Create payout error:", error)
+      {
+        auth: {
+          username: process.env.RAZORPAY_KEY_ID!,
+          password: process.env.RAZORPAY_KEY_SECRET!,
+        },
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    )
+
+    return response.data
+  } catch (error: any) {
+    console.error("Create payout error:", error.response?.data || error.message)
     throw new Error("Failed to create payout")
   }
 }
+
 
 export async function verifyPayment(orderId: string, paymentId: string, signature: string): Promise<boolean> {
   try {
@@ -121,4 +142,9 @@ export const SUBSCRIPTION_PLANS = {
     interval: 1,
     period: "yearly",
   },
+}
+
+export const createRazorpaySubscription = async (params: any) => {
+  // Implementation for creating Razorpay subscription
+  // Add your logic here
 }
