@@ -1,213 +1,521 @@
 "use client"
+
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Slider } from "@/components/ui/slider"
-import { Sparkles, Search, Filter, Target, Users, DollarSign, Calendar } from "lucide-react"
-import { useState } from "react"
+import { Textarea } from "@/components/ui/textarea"
+import { Label } from "@/components/ui/label"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { ArrowLeft, Filter, Eye, Send, Loader2, DollarSign, Calendar, Target } from "lucide-react"
+import Link from "next/link"
 
-export default function ExploreCampaignsPage() {
-  const [budget, setBudget] = useState([5000, 50000])
+interface Campaign {
+  _id: string
+  title: string
+  description: string
+  budget: number
+  targetPlatforms: string[]
+  timeline: {
+    startDate: string
+    endDate: string
+  }
+  brandId: {
+    name: string
+    email: string
+  }
+  deliverables: Array<{
+    type: string
+    platform: string
+    quantity: number
+    description: string
+  }>
+  requirements: string[]
+  matchScore?: number
+}
+
+export default function InfluencerCampaignsPage() {
+  const [campaigns, setCampaigns] = useState<Campaign[]>([])
+  const [loading, setLoading] = useState(true)
+  const [applying, setApplying] = useState<string | null>(null)
+  const [filters, setFilters] = useState({
+    platform: "",
+    minBudget: "",
+    maxBudget: "",
+    niche: "",
+  })
+  const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(null)
+  const [applicationData, setApplicationData] = useState({
+    proposal: "",
+    pricing: "",
+  })
+  const [error, setError] = useState("")
+  const [success, setSuccess] = useState("")
+  const [pagination, setPagination] = useState({
+    page: 1,
+    limit: 12,
+    total: 0,
+    pages: 0,
+  })
+
+  useEffect(() => {
+    fetchCampaigns()
+  }, [filters, pagination.page])
+
+  const fetchCampaigns = async () => {
+    try {
+      setLoading(true)
+      const params = new URLSearchParams({
+        page: pagination.page.toString(),
+        limit: pagination.limit.toString(),
+      })
+
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value && value !== "all") params.append(key, value)
+      })
+
+      const response = await fetch(`/api/influencer/campaigns/discover?${params.toString()}`)
+      const data = await response.json()
+
+      if (response.ok) {
+        setCampaigns(data.campaigns)
+        setPagination(data.pagination)
+      } else {
+        setError(data.error || "Failed to fetch campaigns")
+      }
+    } catch (err) {
+      setError("Failed to fetch campaigns")
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleApply = async (campaignId: string) => {
+    if (!applicationData.proposal || !applicationData.pricing) {
+      setError("Please fill in all application details")
+      return
+    }
+
+    try {
+      setApplying(campaignId)
+      setError("")
+
+      const response = await fetch(`/api/campaigns/${campaignId}/applications`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          proposal: applicationData.proposal,
+          pricing: Number.parseFloat(applicationData.pricing),
+        }),
+      })
+
+      const data = await response.json()
+
+      if (response.ok) {
+        setSuccess("Application submitted successfully!")
+        setApplicationData({ proposal: "", pricing: "" })
+        setSelectedCampaign(null)
+        // Remove applied campaign from list
+        setCampaigns(campaigns.filter((c) => c._id !== campaignId))
+      } else {
+        setError(data.error || "Failed to submit application")
+      }
+    } catch (err) {
+      setError("Failed to submit application")
+    } finally {
+      setApplying(null)
+    }
+  }
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString("en-IN", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    })
+  }
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat("en-IN", {
+      style: "currency",
+      currency: "INR",
+      maximumFractionDigits: 0,
+    }).format(amount)
+  }
+
+  const platforms = ["Instagram", "YouTube", "TikTok", "Twitter", "LinkedIn", "Facebook"]
+  const niches = [
+    "Fashion",
+    "Beauty",
+    "Technology",
+    "Lifestyle",
+    "Food",
+    "Travel",
+    "Fitness",
+    "Gaming",
+    "Education",
+    "Business",
+  ]
+
+  const getPlatformEmoji = (platform: string) => {
+    switch (platform.toLowerCase()) {
+      case "instagram":
+        return "📸"
+      case "youtube":
+        return "📺"
+      case "tiktok":
+        return "🎵"
+      case "twitter":
+        return "🐦"
+      case "linkedin":
+        return "💼"
+      case "facebook":
+        return "👥"
+      default:
+        return "📱"
+    }
+  }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50 py-12">
-      <div className="container mx-auto px-4">
-        <div className="max-w-7xl mx-auto">
-          {/* Header */}
-          <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold mb-2">Explore Campaigns</h1>
-            <p className="text-gray-600">Find the perfect brand collaborations for your content</p>
-          </div>
+    <div className="min-h-screen bg-gray-50">
+      <div className="container mx-auto px-4 py-8">
+        <div className="mb-6">
+          <Link href="/influencer/dashboard" className="inline-flex items-center text-purple-600 hover:text-purple-700">
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back to Dashboard
+          </Link>
+        </div>
 
-          {/* Search and Filters */}
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 mb-8">
-            {/* Search Bar */}
-            <div className="lg:col-span-2">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                <Input placeholder="Search campaigns..." className="pl-10" />
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold mb-2">Discover Campaigns</h1>
+          <p className="text-gray-600">Find campaigns that match your niche and apply to collaborate with brands</p>
+        </div>
+
+        {/* Filters */}
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <Filter className="h-5 w-5 mr-2" />
+              Filter Campaigns
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div className="space-y-2">
+                <Label>Platform</Label>
+                <Select value={filters.platform} onValueChange={(value) => setFilters({ ...filters, platform: value })}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="All platforms" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All platforms</SelectItem>
+                    {platforms.map((platform) => (
+                      <SelectItem key={platform} value={platform}>
+                        {getPlatformEmoji(platform)} {platform}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Niche</Label>
+                <Select value={filters.niche} onValueChange={(value) => setFilters({ ...filters, niche: value })}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="All niches" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All niches</SelectItem>
+                    {niches.map((niche) => (
+                      <SelectItem key={niche} value={niche}>
+                        {niche}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Min Budget</Label>
+                <Input
+                  type="number"
+                  placeholder="e.g., 5000"
+                  value={filters.minBudget}
+                  onChange={(e) => setFilters({ ...filters, minBudget: e.target.value })}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Max Budget</Label>
+                <Input
+                  type="number"
+                  placeholder="e.g., 50000"
+                  value={filters.maxBudget}
+                  onChange={(e) => setFilters({ ...filters, maxBudget: e.target.value })}
+                />
               </div>
             </div>
+          </CardContent>
+        </Card>
 
-            {/* Filters */}
-            <div className="lg:col-span-2">
-              <div className="flex gap-4">
-                <Select>
-                  <SelectTrigger className="w-[180px]">
-                    <SelectValue placeholder="Platform" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Platforms</SelectItem>
-                    <SelectItem value="instagram">Instagram</SelectItem>
-                    <SelectItem value="youtube">YouTube</SelectItem>
-                    <SelectItem value="tiktok">TikTok</SelectItem>
-                  </SelectContent>
-                </Select>
+        {/* Error/Success Messages */}
+        {error && (
+          <Alert className="mb-6 border-red-200 bg-red-50">
+            <AlertDescription className="text-red-700">{error}</AlertDescription>
+          </Alert>
+        )}
 
-                <Select>
-                  <SelectTrigger className="w-[180px]">
-                    <SelectValue placeholder="Category" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Categories</SelectItem>
-                    <SelectItem value="fashion">Fashion</SelectItem>
-                    <SelectItem value="beauty">Beauty</SelectItem>
-                    <SelectItem value="lifestyle">Lifestyle</SelectItem>
-                    <SelectItem value="tech">Technology</SelectItem>
-                  </SelectContent>
-                </Select>
+        {success && (
+          <Alert className="mb-6 border-green-200 bg-green-50">
+            <AlertDescription className="text-green-700">{success}</AlertDescription>
+          </Alert>
+        )}
 
-                <Button variant="outline">
-                  <Filter className="h-4 w-4 mr-2" />
-                  More Filters
+        {/* Campaigns Grid */}
+        {loading ? (
+          <div className="text-center py-8">
+            <Loader2 className="h-8 w-8 animate-spin mx-auto" />
+            <p className="text-gray-500 mt-2">Loading campaigns...</p>
+          </div>
+        ) : campaigns.length === 0 ? (
+          <div className="text-center py-8">
+            <Target className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+            <p className="text-gray-500">No campaigns found matching your criteria.</p>
+          </div>
+        ) : (
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {campaigns.map((campaign) => (
+                <Card key={campaign._id} className="hover:shadow-lg transition-shadow duration-200">
+                  <CardHeader>
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <CardTitle className="text-lg line-clamp-2">{campaign.title}</CardTitle>
+                        <CardDescription className="mt-1">By {campaign.brandId?.name || "Brand"}</CardDescription>
+                      </div>
+                      <div className="flex flex-col items-end space-y-1">
+                        <Badge className="bg-green-100 text-green-700">Active</Badge>
+                        {campaign.matchScore && (
+                          <Badge variant="outline" className="text-xs">
+                            {campaign.matchScore}% match
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      <p className="text-sm text-gray-700 line-clamp-3">{campaign.description}</p>
+
+                      <div className="grid grid-cols-2 gap-4 text-sm">
+                        <div className="flex items-center">
+                          <DollarSign className="h-4 w-4 text-green-600 mr-1" />
+                          <span className="font-medium">{formatCurrency(campaign.budget)}</span>
+                        </div>
+                        <div className="flex items-center">
+                          <Calendar className="h-4 w-4 text-blue-600 mr-1" />
+                          <span>{formatDate(campaign.timeline?.endDate)}</span>
+                        </div>
+                      </div>
+
+                      <div className="flex flex-wrap gap-1">
+                        {campaign.targetPlatforms?.slice(0, 3).map((platform) => (
+                          <Badge key={platform} variant="outline" className="text-xs">
+                            {getPlatformEmoji(platform)} {platform}
+                          </Badge>
+                        ))}
+                        {campaign.targetPlatforms?.length > 3 && (
+                          <Badge variant="outline" className="text-xs">
+                            +{campaign.targetPlatforms.length - 3}
+                          </Badge>
+                        )}
+                      </div>
+
+                      <div className="flex space-x-2">
+                        <Dialog>
+                          <DialogTrigger asChild>
+                            <Button variant="outline" size="sm" className="flex-1">
+                              <Eye className="h-4 w-4 mr-2" />
+                              View Details
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent className="max-w-2xl">
+                            <DialogHeader>
+                              <DialogTitle>{campaign.title}</DialogTitle>
+                              <DialogDescription>Campaign Details</DialogDescription>
+                            </DialogHeader>
+                            <div className="space-y-4 max-h-96 overflow-y-auto">
+                              <div>
+                                <h4 className="font-medium mb-2">Description</h4>
+                                <p className="text-gray-700">{campaign.description}</p>
+                              </div>
+
+                              <div>
+                                <h4 className="font-medium mb-2">Budget</h4>
+                                <p className="text-2xl font-bold text-green-600">{formatCurrency(campaign.budget)}</p>
+                              </div>
+
+                              <div>
+                                <h4 className="font-medium mb-2">Target Platforms</h4>
+                                <div className="flex flex-wrap gap-2">
+                                  {campaign.targetPlatforms?.map((platform) => (
+                                    <Badge key={platform} variant="outline">
+                                      {getPlatformEmoji(platform)} {platform}
+                                    </Badge>
+                                  ))}
+                                </div>
+                              </div>
+
+                              <div>
+                                <h4 className="font-medium mb-2">Deliverables</h4>
+                                <div className="space-y-2">
+                                  {campaign.deliverables?.map((deliverable, index) => (
+                                    <div key={index} className="p-3 bg-gray-50 rounded">
+                                      <div className="font-medium">
+                                        {deliverable.quantity}x {deliverable.type} on {deliverable.platform}
+                                      </div>
+                                      <div className="text-sm text-gray-600 mt-1">{deliverable.description}</div>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+
+                              <div>
+                                <h4 className="font-medium mb-2">Timeline</h4>
+                                <p className="text-gray-700">
+                                  {formatDate(campaign.timeline?.startDate)} - {formatDate(campaign.timeline?.endDate)}
+                                </p>
+                              </div>
+
+                              {campaign.requirements && campaign.requirements.length > 0 && (
+                                <div>
+                                  <h4 className="font-medium mb-2">Requirements</h4>
+                                  <ul className="list-disc list-inside space-y-1">
+                                    {campaign.requirements.map((req, index) => (
+                                      <li key={index} className="text-sm text-gray-700">
+                                        {req}
+                                      </li>
+                                    ))}
+                                  </ul>
+                                </div>
+                              )}
+                            </div>
+                          </DialogContent>
+                        </Dialog>
+
+                        <Dialog>
+                          <DialogTrigger asChild>
+                            <Button size="sm" className="flex-1" onClick={() => setSelectedCampaign(campaign)}>
+                              <Send className="h-4 w-4 mr-2" />
+                              Apply
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent>
+                            <DialogHeader>
+                              <DialogTitle>Apply to Campaign</DialogTitle>
+                              <DialogDescription>
+                                Submit your proposal for "{selectedCampaign?.title}"
+                              </DialogDescription>
+                            </DialogHeader>
+                            <div className="space-y-4">
+                              <div className="space-y-2">
+                                <Label htmlFor="proposal">Your Proposal</Label>
+                                <Textarea
+                                  id="proposal"
+                                  placeholder="Explain why you're perfect for this campaign, your approach, and what value you'll bring..."
+                                  value={applicationData.proposal}
+                                  onChange={(e) => setApplicationData({ ...applicationData, proposal: e.target.value })}
+                                  rows={4}
+                                  maxLength={1000}
+                                />
+                                <div className="text-sm text-gray-500">
+                                  {applicationData.proposal.length}/1000 characters
+                                </div>
+                              </div>
+
+                              <div className="space-y-2">
+                                <Label htmlFor="pricing">Your Price (₹)</Label>
+                                <Input
+                                  id="pricing"
+                                  type="number"
+                                  placeholder="Enter your proposed price"
+                                  value={applicationData.pricing}
+                                  onChange={(e) => setApplicationData({ ...applicationData, pricing: e.target.value })}
+                                  min="0"
+                                />
+                              </div>
+
+                              <div className="flex justify-end space-x-2">
+                                <Button
+                                  variant="outline"
+                                  onClick={() => {
+                                    setSelectedCampaign(null)
+                                    setApplicationData({ proposal: "", pricing: "" })
+                                  }}
+                                  disabled={applying === selectedCampaign?._id}
+                                >
+                                  Cancel
+                                </Button>
+                                <Button
+                                  onClick={() => handleApply(selectedCampaign!._id)}
+                                  disabled={applying === selectedCampaign?._id}
+                                >
+                                  {applying === selectedCampaign?._id ? (
+                                    <>
+                                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                      Submitting...
+                                    </>
+                                  ) : (
+                                    "Submit Application"
+                                  )}
+                                </Button>
+                              </div>
+                            </div>
+                          </DialogContent>
+                        </Dialog>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+
+            {/* Pagination */}
+            {pagination.pages > 1 && (
+              <div className="flex justify-center items-center space-x-2 mt-8">
+                <Button
+                  variant="outline"
+                  onClick={() => setPagination({ ...pagination, page: pagination.page - 1 })}
+                  disabled={pagination.page === 1}
+                >
+                  Previous
+                </Button>
+                <span className="text-sm text-gray-600">
+                  Page {pagination.page} of {pagination.pages}
+                </span>
+                <Button
+                  variant="outline"
+                  onClick={() => setPagination({ ...pagination, page: pagination.page + 1 })}
+                  disabled={pagination.page === pagination.pages}
+                >
+                  Next
                 </Button>
               </div>
-            </div>
-          </div>
-
-          {/* AI Recommendations */}
-          <div className="mb-8">
-            <div className="flex items-center gap-2 mb-4">
-              <Sparkles className="h-5 w-5 text-purple-600" />
-              <h2 className="text-xl font-bold">AI-Recommended Campaigns</h2>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {/* Recommended Campaign 1 */}
-              <Card className="border-purple-200">
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <Badge className="bg-purple-100 text-purple-700">Recommended</Badge>
-                    <Badge variant="outline">Instagram</Badge>
-                  </div>
-                  <CardTitle className="mt-2">Summer Fashion Collection</CardTitle>
-                  <CardDescription>Perfect match for your fashion content</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-gray-600">Budget</span>
-                      <span className="font-medium">₹15,000</span>
-                    </div>
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-gray-600">Engagement Match</span>
-                      <span className="text-green-600">95%</span>
-                    </div>
-                    <Button className="w-full">Apply Now</Button>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Recommended Campaign 2 */}
-              <Card className="border-purple-200">
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <Badge className="bg-purple-100 text-purple-700">Recommended</Badge>
-                    <Badge variant="outline">YouTube</Badge>
-                  </div>
-                  <CardTitle className="mt-2">Tech Product Review</CardTitle>
-                  <CardDescription>Matches your tech review style</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-gray-600">Budget</span>
-                      <span className="font-medium">₹25,000</span>
-                    </div>
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-gray-600">Engagement Match</span>
-                      <span className="text-green-600">92%</span>
-                    </div>
-                    <Button className="w-full">Apply Now</Button>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-
-          {/* All Campaigns */}
-          <div>
-            <h2 className="text-xl font-bold mb-4">All Campaigns</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {/* Campaign 1 */}
-              <Card>
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <Badge variant="outline">Instagram</Badge>
-                    <span className="text-sm text-gray-500">2 days ago</span>
-                  </div>
-                  <CardTitle className="mt-2">Beauty Product Launch</CardTitle>
-                  <CardDescription>Looking for beauty influencers</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-gray-600">Budget</span>
-                      <span className="font-medium">₹20,000</span>
-                    </div>
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-gray-600">Required Followers</span>
-                      <span>10K+</span>
-                    </div>
-                    <Button className="w-full">View Details</Button>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Campaign 2 */}
-              <Card>
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <Badge variant="outline">TikTok</Badge>
-                    <span className="text-sm text-gray-500">5 days ago</span>
-                  </div>
-                  <CardTitle className="mt-2">Food Delivery Campaign</CardTitle>
-                  <CardDescription>Create engaging food content</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-gray-600">Budget</span>
-                      <span className="font-medium">₹30,000</span>
-                    </div>
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-gray-600">Required Followers</span>
-                      <span>50K+</span>
-                    </div>
-                    <Button className="w-full">View Details</Button>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Campaign 3 */}
-              <Card>
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <Badge variant="outline">YouTube</Badge>
-                    <span className="text-sm text-gray-500">1 week ago</span>
-                  </div>
-                  <CardTitle className="mt-2">Gaming Setup Tour</CardTitle>
-                  <CardDescription>Showcase gaming equipment</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-gray-600">Budget</span>
-                      <span className="font-medium">₹40,000</span>
-                    </div>
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-gray-600">Required Followers</span>
-                      <span>100K+</span>
-                    </div>
-                    <Button className="w-full">View Details</Button>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-        </div>
+            )}
+          </>
+        )}
       </div>
     </div>
   )
