@@ -1,25 +1,48 @@
-import { NextResponse } from "next/server"
-import type { NextRequest } from "next/server"
-import jwt from "jsonwebtoken"
+import { type NextRequest, NextResponse } from "next/server"
+import { verifyToken } from "@/lib/auth"
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
-  // Public routes
-  const publicRoutes = ["/", "/auth/login", "/auth/register", "/auth/forgot-password", "/terms", "/privacy"]
-  const token = request.cookies.get("auth-token")?.value
+  // Public routes that don't require authentication
+  const publicRoutes = [
+    "/",
+    "/auth/login",
+    "/auth/register",
+    "/auth/forgot-password",
+    "/auth/reset-password",
+    "/about",
+    "/features",
+    "/pricing",
+    "/contact",
+    "/help",
+    "/faq",
+    "/docs",
+    "/terms",
+    "/privacy",
+    "/cookies",
+    "/security",
+    "/cancellations",
+  ]
 
-  // Allow access to public and unauthenticated API routes
-  if (
-    publicRoutes.includes(pathname) ||
-    pathname.startsWith("/api/auth") ||
-    pathname.startsWith("/api/subscription/webhook")
-  ) {
+  // API routes that don't require authentication
+  const publicApiRoutes = [
+    "/api/auth/login",
+    "/api/auth/register",
+    "/api/payments/razorpay/webhook",
+    "/api/localization",
+  ]
+
+  // Check if the route is public
+  if (publicRoutes.includes(pathname) || publicApiRoutes.some((route) => pathname.startsWith(route))) {
     return NextResponse.next()
   }
 
-  // Require token
+  // Check for authentication token
+  const token = request.cookies.get("auth-token")?.value
+
   if (!token) {
+    // Redirect to login for protected pages
     if (pathname.startsWith("/api/")) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
@@ -27,50 +50,67 @@ export function middleware(request: NextRequest) {
   }
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as any
+    const decoded = verifyToken(token)
+    if (!decoded) {
+      throw new Error("Invalid token")
+    }
 
     // Role-based route protection
-    if (pathname.startsWith("/dashboard/admin") && decoded.role !== "admin") {
-      return handleForbidden(pathname, request)
+    const roleRoutes = {
+      admin: ["/admin", "/api/admin"],
+      brand: ["/brand", "/api/brand"],
+      influencer: ["/influencer", "/api/influencer"],
     }
 
-    if (pathname.startsWith("/dashboard/brand") && decoded.role !== "brand") {
-      return handleForbidden(pathname, request)
-    }
-
-    if (pathname.startsWith("/dashboard/influencer") && decoded.role !== "influencer") {
-      return handleForbidden(pathname, request)
-    }
-
-    // Role-based redirection from /dashboard
-    if (pathname === "/dashboard") {
-      const roleDashboardMap: Record<string, string> = {
-        admin: "/dashboard/admin",
-        brand: "/dashboard/brand",
-        influencer: "/dashboard/influencer",
+    // Check if user is accessing role-specific routes
+    for (const [role, routes] of Object.entries(roleRoutes)) {
+      if (routes.some((route) => pathname.startsWith(route))) {
+        if (decoded.role !== role) {
+          if (pathname.startsWith("/api/")) {
+            return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+          }
+          // Redirect to appropriate dashboard based on user role
+          return NextResponse.redirect(new URL(`/${decoded.role}/dashboard`, request.url))
+        }
       }
+    }
 
-      const redirectPath = roleDashboardMap[decoded.role] || "/auth/login"
-      return NextResponse.redirect(new URL(redirectPath, request.url))
+    // Add user info to request headers for API routes
+    if (pathname.startsWith("/api/")) {
+      const requestHeaders = new Headers(request.headers)
+      requestHeaders.set("x-user-id", decoded.userId)
+      requestHeaders.set("x-user-role", decoded.role)
+
+      return NextResponse.next({
+        request: {
+          headers: requestHeaders,
+        },
+      })
     }
 
     return NextResponse.next()
-  } catch (err) {
-    if (pathname.startsWith("/api/")) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-    }
-    return NextResponse.redirect(new URL("/auth/login", request.url))
-  }
-}
+  } catch (error) {
+    console.error("Middleware error:", error)
 
-// Helper function
-function handleForbidden(pathname: string, request: NextRequest) {
-  if (pathname.startsWith("/api/")) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+    // Clear invalid token
+    const response = pathname.startsWith("/api/")
+      ? NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+      : NextResponse.redirect(new URL("/auth/login", request.url))
+
+    response.cookies.delete("auth-token")
+    return response
   }
-  return NextResponse.redirect(new URL("/dashboard", request.url))
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
+  matcher: [
+    /*
+     * Match all request paths except for the ones starting with:
+     * - _next/static (static files)
+     * - _next/image (image optimization files)
+     * - favicon.ico (favicon file)
+     * - public folder
+     */
+    "/((?!_next/static|_next/image|favicon.ico|public).*)",
+  ],
 }

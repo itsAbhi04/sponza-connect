@@ -1,10 +1,5 @@
-import mongoose from "mongoose"
+import type { MongoClient } from "mongodb"
 
 declare global {
-  var mongoose: {
-    conn: typeof mongoose | null
-    promise: Promise<typeof mongoose> | null
-  } | undefined
+  var _mongoClientPromise: Promise<MongoClient>
 }
-
-export {}

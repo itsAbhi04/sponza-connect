@@ -1,129 +1,124 @@
 import Razorpay from "razorpay"
 import crypto from "crypto"
 
-const razorpay = new Razorpay({
-  key_id: process.env.RAZORPAY_KEY_ID || "",
-  key_secret: process.env.RAZORPAY_KEY_SECRET || "",
+if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
+  throw new Error("Razorpay credentials are not configured")
+}
+
+export const razorpay = new Razorpay({
+  key_id: process.env.RAZORPAY_KEY_ID,
+  key_secret: process.env.RAZORPAY_KEY_SECRET,
 })
 
-export async function createRazorpaySubscription(planType: string, userId: string) {
-  const plans = {
-    premium_monthly: {
-      amount: 299900, // ₹2999 in paise
-      interval: 1,
-      period: "monthly",
-    },
-    premium_annual: {
-      amount: 2999900, // ₹29999 in paise
-      interval: 1,
-      period: "yearly",
-    },
-  }
-
-  const plan = plans[planType as keyof typeof plans]
-  if (!plan) {
-    throw new Error("Invalid plan type")
-  }
-
+export function validateWebhookSignature(body: string, signature: string): boolean {
   try {
-    // Create Razorpay plan
-    const razorpayPlan = await razorpay.plans.create({
-      period: plan.period,
-      interval: plan.interval,
-      item: {
-        name: `Sponza ${planType.replace("_", " ")} Plan`,
-        amount: plan.amount,
-        currency: "INR",
-      },
-    })
+    const expectedSignature = crypto
+      .createHmac("sha256", process.env.RAZORPAY_WEBHOOK_SECRET!)
+      .update(body)
+      .digest("hex")
 
-    // Create subscription
-    const subscription = await razorpay.subscriptions.create({
-      plan_id: razorpayPlan.id,
-      customer_notify: 1,
-      total_count: planType === "premium_annual" ? 1 : 12, // 1 year for annual, 12 months for monthly
-      notes: {
-        userId: userId,
-        planType: planType,
-      },
-    })
-
-    return subscription
+    return crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expectedSignature))
   } catch (error) {
-    console.error("Razorpay subscription creation failed:", error)
-    throw new Error("Failed to create subscription")
+    console.error("Webhook signature validation error:", error)
+    return false
   }
 }
 
-export async function createRazorpayOrder(amount: number, currency = "INR", notes: any = {}) {
+export async function createOrder(amount: number, currency = "INR", receipt?: string) {
   try {
     const order = await razorpay.orders.create({
       amount: amount * 100, // Convert to paise
       currency,
-      notes,
+      receipt: receipt || `order_${Date.now()}`,
     })
-
     return order
   } catch (error) {
-    console.error("Razorpay order creation failed:", error)
-    throw new Error("Failed to create order")
+    console.error("Create order error:", error)
+    throw new Error("Failed to create payment order")
   }
 }
 
-export async function createRazorpayPayout(amount: number, bankDetails: any, notes: any = {}) {
+export async function createSubscription(planId: string, customerId: string, totalCount?: number) {
+  try {
+    const subscription = await razorpay.subscriptions.create({
+      plan_id: planId,
+      customer_id: customerId,
+      total_count: totalCount,
+      quantity: 1,
+    })
+    return subscription
+  } catch (error) {
+    console.error("Create subscription error:", error)
+    throw new Error("Failed to create subscription")
+  }
+}
+
+export async function createCustomer(name: string, email: string, contact?: string) {
+  try {
+    const customer = await razorpay.customers.create({
+      name,
+      email,
+      contact,
+    })
+    return customer
+  } catch (error) {
+    console.error("Create customer error:", error)
+    throw new Error("Failed to create customer")
+  }
+}
+
+export async function createPayout(amount: number, accountNumber: string, ifsc: string, purpose = "payout") {
   try {
     const payout = await razorpay.payouts.create({
-      account_number: process.env.RAZORPAY_ACCOUNT_NUMBER,
+      account_number: process.env.RAZORPAY_ACCOUNT_NUMBER!,
       amount: amount * 100, // Convert to paise
       currency: "INR",
-      mode: "NEFT",
-      purpose: "payout",
+      mode: "IMPS",
+      purpose,
       fund_account: {
         account_type: "bank_account",
         bank_account: {
-          name: bankDetails.accountHolderName,
-          ifsc: bankDetails.ifscCode,
-          account_number: bankDetails.accountNumber,
+          name: "Beneficiary Name",
+          ifsc,
+          account_number: accountNumber,
         },
       },
       queue_if_low_balance: true,
-      reference_id: `payout_${Date.now()}`,
-      narration: "Sponza influencer payout",
-      notes,
     })
-
     return payout
   } catch (error) {
-    console.error("Razorpay payout creation failed:", error)
+    console.error("Create payout error:", error)
     throw new Error("Failed to create payout")
   }
 }
 
-export function verifyRazorpayWebhook(body: string, signature: string): boolean {
+export async function verifyPayment(orderId: string, paymentId: string, signature: string): Promise<boolean> {
   try {
-    const expectedSignature = crypto
-      .createHmac("sha256", process.env.RAZORPAY_WEBHOOK_SECRET || "")
-      .update(body)
-      .digest("hex")
+    const body = orderId + "|" + paymentId
+    const expectedSignature = crypto.createHmac("sha256", process.env.RAZORPAY_KEY_SECRET!).update(body).digest("hex")
 
     return crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expectedSignature))
   } catch (error) {
-    console.error("Webhook verification failed:", error)
+    console.error("Payment verification error:", error)
     return false
   }
 }
 
-export function verifyRazorpayPayment(orderId: string, paymentId: string, signature: string): boolean {
-  try {
-    const body = orderId + "|" + paymentId
-    const expectedSignature = crypto
-      .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET || "")
-      .update(body)
-      .digest("hex")
-
-    return crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expectedSignature))
-  } catch (error) {
-    console.error("Payment verification failed:", error)
-    return false
-  }
+export const SUBSCRIPTION_PLANS = {
+  premium_monthly: {
+    id: "plan_premium_monthly",
+    name: "Premium Monthly",
+    amount: 99900, // ₹999 in paise
+    currency: "INR",
+    interval: 1,
+    period: "monthly",
+  },
+  premium_annual: {
+    id: "plan_premium_annual",
+    name: "Premium Annual",
+    amount: 999900, // ₹9999 in paise
+    currency: "INR",
+    interval: 1,
+    period: "yearly",
+  },
 }
