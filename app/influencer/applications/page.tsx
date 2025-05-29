@@ -237,4 +237,4 @@ export default function MyApplicationsPage() {
       </div>
     </div>
   )
-} 
+}

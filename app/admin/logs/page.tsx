@@ -225,4 +225,4 @@ export default function AdminLogsPage() {
       </div>
     </div>
   )
-} 
+}

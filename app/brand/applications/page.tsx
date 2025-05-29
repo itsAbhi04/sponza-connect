@@ -203,4 +203,4 @@ export default function ManageApplicationsPage() {
       </div>
     </div>
   )
-} 
+}

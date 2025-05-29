@@ -142,4 +142,4 @@ export default function BrandLayout({ children }: { children: React.ReactNode })
       </div>
     </div>
   )
-} 
+}

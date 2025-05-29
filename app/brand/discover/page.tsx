@@ -227,4 +227,4 @@ export default function DiscoverInfluencersPage() {
       </div>
     </div>
   )
-} 
+}

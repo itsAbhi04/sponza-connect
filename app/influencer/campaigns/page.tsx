@@ -211,4 +211,4 @@ export default function ExploreCampaignsPage() {
       </div>
     </div>
   )
-} 
+}
