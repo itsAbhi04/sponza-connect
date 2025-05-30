@@ -1,130 +1,174 @@
 # Sponza Connect
 
-A comprehensive platform connecting brands with influencers for effective marketing campaigns.
+A comprehensive influencer marketing platform built with Next.js 15 and TypeScript.
 
-## Overview
+## 🚀 Overview
 
-Sponza Connect is a robust influencer marketing platform that facilitates seamless collaboration between brands and content creators. The platform leverages AI-powered features for content moderation, smart matching, and analytics.
+Sponza Connect bridges brands and influencers through an AI-powered platform, enabling seamless campaign management and collaboration.
 
-## Features
+## ⭐ Core Features
 
 ### For Brands
-- Campaign creation and management
-- Influencer discovery and filtering
-- Real-time analytics and reporting
-- Secure payment processing
-- Direct messaging with influencers
-- Campaign performance tracking
+- 📊 Advanced campaign analytics dashboard
+- 🔍 AI-powered influencer matching
+- 💰 Secure payment processing via Razorpay
+- 📱 Real-time campaign tracking
+- 📈 ROI measurement tools
+- 💬 Direct messaging system
 
 ### For Influencers
-- Profile customization
-- Campaign discovery
-- Application management
-- Analytics dashboard
-- Secure payments
-- Direct communication with brands
+- 🎯 Smart campaign recommendations
+- 📱 Multi-platform stats integration
+- 💼 Portfolio management
+- 📊 Performance analytics
+- 🔔 Automated payment tracking
+- 👥 Referral program
 
-### Platform Features
-- AI-powered content moderation
-- Real-time messaging
-- Automated campaign reminders
-- Multi-language support
-- Secure authentication
-- Role-based access control
+## 🛠 Tech Stack
 
-## Tech Stack
-
-- **Frontend**: React 19, Next.js 15.2
-- **Backend**: Node.js with Next.js API routes
-- **Database**: MongoDB with Mongoose
-- **Authentication**: JWT-based auth
-- **UI Components**: Radix UI
-- **Styling**: Tailwind CSS
-- **Payment Processing**: Razorpay
+### Frontend
+- **Framework**: Next.js 15.2, React 19
 - **Type Safety**: TypeScript
+- **Styling**: 
+  - Tailwind CSS
+  - Radix UI Components
+  - CSS Variables for theming
+  - class-variance-authority
+- **State Management**: React Context + Hooks
+- **Forms**: React Hook Form + Zod
+- **Data Fetching**: axios
 
-## Getting Started
+### Backend
+- **Runtime**: Node.js with Next.js API Routes
+- **Database**: 
+  - MongoDB with Mongoose
+  - Indexes for performance
+  - Aggregation pipelines
+- **Authentication**: 
+  - JWT-based auth
+  - HTTP-only cookies
+  - Role-based access control
 
-1. Clone the repository:
-\`\`\`bash
+### Infrastructure
+- **Hosting**: Vercel
+- **Media Storage**: AWS S3
+- **CDN**: Vercel Edge Network
+- **Monitoring**: Vercel Analytics
+
+### Third-Party Services
+- **Payments**: Razorpay
+- **Email**: SendGrid
+- **SMS**: Twilio
+- **Analytics**: 
+  - Google Analytics
+  - Custom event tracking
+
+## 📦 Dependencies
+
+### Core Dependencies
+```json
+{
+  "next": "15.2.4",
+  "react": "^19",
+  "typescript": "^5",
+  "mongoose": "latest",
+  "razorpay": "latest",
+  "tailwindcss": "^3.4.17"
+}
+```
+
+### UI Components
+```json
+{
+  "@radix-ui/react-*": "Various UI components",
+  "lucide-react": "^0.454.0",
+  "class-variance-authority": "^0.7.1",
+  "tailwind-merge": "^2.5.5"
+}
+```
+
+## 🚀 Getting Started
+
+1. **Clone and Install:**
+```bash
 git clone https://github.com/yourusername/sponza-connect.git
-\`\`\`
-
-2. Install dependencies:
-\`\`\`bash
+cd sponza-connect
 npm install
-\`\`\`
+```
 
-3. Set up environment variables:
-\`\`\`bash
+2. **Environment Setup:**
+```bash
 cp .env.example .env.local
-\`\`\`
+```
 
-4. Run the development server:
-\`\`\`bash
+Required environment variables:
+```env
+MONGODB_URI=your_mongodb_uri
+RAZORPAY_KEY_ID=your_razorpay_key
+RAZORPAY_KEY_SECRET=your_razorpay_secret
+JWT_SECRET=your_jwt_secret
+AWS_ACCESS_KEY=your_aws_key
+AWS_SECRET_KEY=your_aws_secret
+```
+
+3. **Development:**
+```bash
 npm run dev
-\`\`\`
+```
 
-## Project Structure
+4. **Build & Deploy:**
+```bash
+npm run build
+npm start
+```
 
-\`\`\`
+## 📁 Project Structure
+
+```
 sponza-connect/
-├── app/                    # Next.js app directory
+├── app/                    
 │   ├── admin/             # Admin dashboard
-│   ├── brand/             # Brand dashboard
-│   ├── influencer/        # Influencer dashboard
-│   └── api/               # API routes
-├── components/            # Reusable components
-├── lib/                   # Utilities and models
+│   ├── brand/             # Brand portal
+│   ├── influencer/        # Influencer portal
+│   ├── api/               # API routes
+│   └── (auth)/            # Authentication pages
+├── components/            
+│   ├── ui/               # Reusable UI components
+│   ├── forms/            # Form components
+│   └── layouts/          # Layout components
+├── lib/                  
 │   ├── models/           # Mongoose models
-│   └── utils.ts          # Helper functions
-└── public/               # Static assets
-\`\`\`
+│   ├── utils/            # Utility functions
+│   └── config/           # Configuration
+├── public/               # Static assets
+└── styles/              # Global styles
+```
 
-## API Documentation
+## 🔒 Security Features
 
-The platform provides comprehensive API endpoints for:
-- Campaign Management
-- Influencer Management
-- Analytics
-- Payments
-- Authentication
-- Content Moderation
+- CSRF Protection
+- Rate Limiting
+- Input Sanitization
+- XSS Prevention
+- SQL Injection Protection
+- Secure Headers
+- Cookie Security
+- File Upload Validation
 
-Detailed API documentation is available at `/docs` when running the application.
+## 📝 License & Legal
 
-## Security Features
+- **License**: Proprietary
+- **Privacy Policy**: [View](https://sponza.in/privacy)
+- **Terms of Service**: [View](https://sponza.in/terms)
 
-- JWT-based authentication
-- Role-based access control
-- API rate limiting
-- Secure payment processing
-- Input validation with Zod
-- XSS protection
+## 📞 Contact & Support
 
-## Contributing
+- **Email**: support@sponza.in
+- **Website**: https://sponza.in
+- **Documentation**: https://docs.sponza.in
 
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add some amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+## 🌟 Status
 
-## License
-
-This project is proprietary software. All rights reserved.
-
-## Contact
-
-For support or inquiries, please contact:
-- Email: support@sponza.com
-- Website: https://sponza.com
-
-## Deployment
-
-The project is deployed on Vercel:
-[![Deployed on Vercel](https://img.shields.io/badge/Deployed%20on-Vercel-black?style=for-the-badge&logo=vercel)](https://vercel.com/pracharprashar/v0-sponza-platform-spec)
-
-## Development Status
-
-Current Version: 0.1.0
+![Vercel Deploy](https://img.shields.io/github/deployments/yourusername/sponza-connect/production?label=vercel&logo=vercel&logoColor=white)
+![License](https://img.shields.io/badge/license-proprietary-red)
+![Version](https://img.shields.io/badge/version-0.1.0-blue)
