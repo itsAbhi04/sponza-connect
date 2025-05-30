@@ -57,7 +57,7 @@ async function getRecommendedCampaigns(influencerId: string, limit: number) {
       _id: { $nin: appliedCampaigns },
       status: "published",
       $or: [
-        { targetPlatforms: { $in: influencerProfile.socialMediaStats.map((stat) => stat.platform) } },
+        { targetPlatforms: { $in: influencerProfile.socialMediaStats.map((stat: { platform: any }) => stat.platform) } },
         { "targetAudience.interests": { $in: influencerProfile.niche } },
       ],
     })
@@ -70,25 +70,25 @@ async function getRecommendedCampaigns(influencerId: string, limit: number) {
       let matchScore = 0
 
       // Platform match
-      const platformMatch = campaign.targetPlatforms.some((platform) =>
-        influencerProfile.socialMediaStats.some((stat) => stat.platform === platform),
+      const platformMatch = campaign.targetPlatforms.some((platform: any) =>
+        influencerProfile.socialMediaStats.some((stat: { platform: any }) => stat.platform === platform),
       )
       if (platformMatch) matchScore += 30
 
       // Niche match
-      const nicheMatch = campaign.targetAudience?.interests?.some((interest) =>
+      const nicheMatch = campaign.targetAudience?.interests?.some((interest: any) =>
         influencerProfile.niche.includes(interest),
       )
       if (nicheMatch) matchScore += 40
 
       // Budget compatibility (simplified)
       const avgPricing =
-        influencerProfile.pricingStructure.reduce((sum, pricing) => sum + pricing.price, 0) /
+        influencerProfile.pricingStructure.reduce((sum: any, pricing: { price: any }) => sum + pricing.price, 0) /
         (influencerProfile.pricingStructure.length || 1)
       if (campaign.budget >= avgPricing * 0.8) matchScore += 20
 
       // Follower count relevance
-      const totalFollowers = influencerProfile.socialMediaStats.reduce((sum, stat) => sum + stat.followers, 0)
+      const totalFollowers = influencerProfile.socialMediaStats.reduce((sum: any, stat: { followers: any }) => sum + stat.followers, 0)
       if (totalFollowers >= 1000) matchScore += 10
 
       return {
@@ -140,11 +140,11 @@ async function getRecommendedInfluencers(campaignId: string, limit: number) {
       let matchScore = 0
 
       // Platform match
-      const platformMatch = influencer.socialMediaStats.some((stat) => campaign.targetPlatforms.includes(stat.platform))
+      const platformMatch = influencer.socialMediaStats.some((stat: { platform: any }) => campaign.targetPlatforms.includes(stat.platform))
       if (platformMatch) matchScore += 30
 
       // Niche match
-      const nicheMatch = influencer.niche.some((niche) => campaign.targetAudience?.interests?.includes(niche))
+      const nicheMatch = influencer.niche.some((niche: any) => campaign.targetAudience?.interests?.includes(niche))
       if (nicheMatch) matchScore += 40
 
       // Rating bonus
@@ -153,13 +153,13 @@ async function getRecommendedInfluencers(campaignId: string, limit: number) {
 
       // Engagement rate bonus
       const avgEngagement =
-        influencer.socialMediaStats.reduce((sum, stat) => sum + stat.engagementRate, 0) /
+        influencer.socialMediaStats.reduce((sum: any, stat: { engagementRate: any }) => sum + stat.engagementRate, 0) /
         (influencer.socialMediaStats.length || 1)
       if (avgEngagement >= 3.0) matchScore += 10
       if (avgEngagement >= 5.0) matchScore += 10
 
       // Follower count relevance
-      const totalFollowers = influencer.socialMediaStats.reduce((sum, stat) => sum + stat.followers, 0)
+      const totalFollowers = influencer.socialMediaStats.reduce((sum: any, stat: { followers: any }) => sum + stat.followers, 0)
       if (totalFollowers >= 10000) matchScore += 5
       if (totalFollowers >= 100000) matchScore += 10
 
