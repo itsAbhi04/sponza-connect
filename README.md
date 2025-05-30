@@ -46,28 +46,28 @@ Sponza Connect is a robust influencer marketing platform that facilitates seamle
 ## Getting Started
 
 1. Clone the repository:
-```bash
+\`\`\`bash
 git clone https://github.com/yourusername/sponza-connect.git
-```
+\`\`\`
 
 2. Install dependencies:
-```bash
+\`\`\`bash
 npm install
-```
+\`\`\`
 
 3. Set up environment variables:
-```bash
+\`\`\`bash
 cp .env.example .env.local
-```
+\`\`\`
 
 4. Run the development server:
-```bash
+\`\`\`bash
 npm run dev
-```
+\`\`\`
 
 ## Project Structure
 
-```
+\`\`\`
 sponza-connect/
 ├── app/                    # Next.js app directory
 │   ├── admin/             # Admin dashboard
@@ -79,7 +79,7 @@ sponza-connect/
 │   ├── models/           # Mongoose models
 │   └── utils.ts          # Helper functions
 └── public/               # Static assets
-```
+\`\`\`
 
 ## API Documentation
 
