@@ -25,10 +25,12 @@ export async function GET(request: NextRequest) {
     if (!affiliate) {
       affiliate = new Affiliate({
         userId: decoded.userId,
+        referrerId: decoded.userId, // Set to self for initial creation
         referralCode: generateReferralCode(),
+        rewardAmount: 500, // Default reward amount in INR
         totalReferrals: 0,
         totalEarnings: 0,
-        status: "active",
+        status: "pending", // Start with pending status
       })
       await affiliate.save()
     }

@@ -14,38 +14,37 @@ export interface IAffiliate {
 
 const affiliateSchema = new Schema<IAffiliate>(
   {
-    referralCode: {
-      type: String,
+    userId: {
+      type: Schema.Types.ObjectId,
+      ref: "User",
       required: true,
-      unique: true,
-      uppercase: true,
-      minlength: 6,
-      maxlength: 10,
     },
     referrerId: {
       type: Schema.Types.ObjectId,
       ref: "User",
       required: true,
     },
-    invitees: [
-      {
-        type: Schema.Types.ObjectId,
-        ref: "User",
-      },
-    ],
-    rewardType: {
+    referralCode: {
       type: String,
-      enum: ["fixed", "percentage", "tiered"],
-      default: "fixed",
+      required: true,
+      unique: true,
     },
     rewardAmount: {
       type: Number,
       required: true,
-      min: 0,
+      default: 500, // Default reward amount in INR
+    },
+    totalReferrals: {
+      type: Number,
+      default: 0,
+    },
+    totalEarnings: {
+      type: Number,
+      default: 0,
     },
     status: {
       type: String,
-      enum: ["pending", "credited", "failed"],
+      enum: ["pending", "active", "suspended"],
       default: "pending",
     },
   },

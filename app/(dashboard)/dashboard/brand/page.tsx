@@ -17,15 +17,19 @@ import {
   MessageSquare,
   BarChart3,
   ArrowUpRight,
+  Bell,
+  Settings,
+  LogOut,
+  Loader2,
   AlertCircle,
   CheckCircle,
   Clock,
   Briefcase,
+  Star,
   Activity,
 } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { BrandLayout } from "@/components/layouts/brand-layout"
 
 interface DashboardData {
   stats: {
@@ -81,6 +85,11 @@ export default function BrandDashboard() {
     } finally {
       setLoading(false)
     }
+  }
+
+  const handleLogout = () => {
+    localStorage.removeItem("user")
+    router.push("/")
   }
 
   const formatCurrency = (amount: number) => {
@@ -140,52 +149,74 @@ export default function BrandDashboard() {
 
   if (loading) {
     return (
-      <BrandLayout>
-        <div className="flex items-center justify-center h-96">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
-            <p className="text-gray-600">Loading dashboard...</p>
-          </div>
-        </div>
-      </BrandLayout>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
     )
   }
 
   if (error) {
     return (
-      <BrandLayout>
-        <Alert className="max-w-md mx-auto mt-8">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <Alert className="max-w-md">
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>{error}</AlertDescription>
         </Alert>
-      </BrandLayout>
+      </div>
     )
   }
 
   if (!dashboardData) return null
 
   return (
-    <BrandLayout>
-      <div className="space-y-8">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-            <p className="text-gray-600 mt-1">Welcome back, {dashboardData.profile.companyName || "Brand"}!</p>
-          </div>
-          <div className="flex items-center space-x-4">
-            <Link href="/dashboard/brand/campaigns/create">
-              <Button>
-                <Plus className="h-4 w-4 mr-2" />
-                Create Campaign
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <header className="bg-white border-b">
+        <div className="px-6 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <div className="flex items-center space-x-2">
+                <div className="w-8 h-8 bg-gradient-to-r from-purple-600 to-blue-600 rounded-lg flex items-center justify-center">
+                  <span className="text-white font-bold text-lg">S</span>
+                </div>
+                <span className="text-xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+                  Sponza
+                </span>
+              </div>
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900">Brand Dashboard</h1>
+                <p className="text-gray-600">Welcome back, {dashboardData.profile.companyName || "Brand"}!</p>
+              </div>
+            </div>
+            <div className="flex items-center space-x-4">
+              <Badge className="bg-blue-100 text-blue-700">Premium Plan</Badge>
+              <Button variant="outline" size="sm">
+                <Bell className="h-4 w-4 mr-2" />
+                Notifications
               </Button>
-            </Link>
+              <Button variant="outline" size="sm">
+                <Settings className="h-4 w-4 mr-2" />
+                Settings
+              </Button>
+              <Link href="/dashboard/brand/campaigns/create">
+                <Button>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Create Campaign
+                </Button>
+              </Link>
+              <Button variant="outline" size="sm" onClick={handleLogout}>
+                <LogOut className="h-4 w-4 mr-2" />
+                Logout
+              </Button>
+            </div>
           </div>
         </div>
+      </header>
 
+      <div className="p-6">
         {/* Profile Completion Alert */}
         {!dashboardData.profile.isComplete && (
-          <Alert className="border-orange-200 bg-orange-50">
+          <Alert className="mb-6 border-orange-200 bg-orange-50">
             <AlertCircle className="h-4 w-4 text-orange-600" />
             <AlertDescription className="text-orange-700">
               Complete your brand profile to attract more influencers.{" "}
@@ -196,64 +227,67 @@ export default function BrandDashboard() {
           </Alert>
         )}
 
-        {/* Stats Overview */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Spent</CardTitle>
-              <DollarSign className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{formatCurrency(dashboardData.stats.totalSpent)}</div>
-              <p className="text-xs text-muted-foreground">
-                <span className="text-green-600">+{formatCurrency(dashboardData.stats.thisMonthSpent)}</span> this month
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Active Campaigns</CardTitle>
-              <Target className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{dashboardData.stats.activeCampaigns}</div>
-              <p className="text-xs text-muted-foreground">{dashboardData.stats.draftCampaigns} drafts pending</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Reach</CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{(dashboardData.stats.totalReach / 1000000).toFixed(1)}M</div>
-              <p className="text-xs text-muted-foreground">Estimated audience reach</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Success Rate</CardTitle>
-              <TrendingUp className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{dashboardData.stats.successRate}%</div>
-              <p className="text-xs text-muted-foreground">Campaign completion rate</p>
-            </CardContent>
-          </Card>
-        </div>
-
         <Tabs defaultValue="overview" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-6">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="campaigns">Campaigns</TabsTrigger>
+            <TabsTrigger value="influencers">Influencers</TabsTrigger>
             <TabsTrigger value="applications">Applications</TabsTrigger>
             <TabsTrigger value="analytics">Analytics</TabsTrigger>
+            <TabsTrigger value="wallet">Wallet</TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview" className="space-y-6">
+            {/* Stats Overview */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Total Spent</CardTitle>
+                  <DollarSign className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{formatCurrency(dashboardData.stats.totalSpent)}</div>
+                  <p className="text-xs text-muted-foreground">
+                    <span className="text-green-600">+{formatCurrency(dashboardData.stats.thisMonthSpent)}</span> this
+                    month
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Active Campaigns</CardTitle>
+                  <Target className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{dashboardData.stats.activeCampaigns}</div>
+                  <p className="text-xs text-muted-foreground">{dashboardData.stats.draftCampaigns} drafts pending</p>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Total Reach</CardTitle>
+                  <Users className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{(dashboardData.stats.totalReach / 1000000).toFixed(1)}M</div>
+                  <p className="text-xs text-muted-foreground">Estimated audience reach</p>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Success Rate</CardTitle>
+                  <TrendingUp className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{dashboardData.stats.successRate}%</div>
+                  <p className="text-xs text-muted-foreground">Campaign completion rate</p>
+                </CardContent>
+              </Card>
+            </div>
+
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               {/* Recent Campaigns */}
               <div className="lg:col-span-2">
@@ -346,6 +380,12 @@ export default function BrandDashboard() {
                         Messages
                       </Button>
                     </Link>
+                    <Link href="/dashboard/brand/analytics">
+                      <Button className="w-full justify-start" variant="outline">
+                        <BarChart3 className="h-4 w-4 mr-2" />
+                        View Analytics
+                      </Button>
+                    </Link>
                   </CardContent>
                 </Card>
 
@@ -382,6 +422,48 @@ export default function BrandDashboard() {
                     <Link href="/dashboard/brand/applications">
                       <Button className="w-full mt-4" variant="ghost" size="sm">
                         View All Applications <ArrowUpRight className="h-3 w-3 ml-1" />
+                      </Button>
+                    </Link>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Recommended Influencers</CardTitle>
+                    <CardDescription>Top-rated influencers for your brand</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3">
+                      {dashboardData.recommendedInfluencers.slice(0, 3).map((influencer) => {
+                        const totalFollowers = influencer.socialMediaStats?.reduce(
+                          (sum: number, stat: any) => sum + stat.followers,
+                          0,
+                        )
+                        return (
+                          <div key={influencer._id} className="flex items-center justify-between">
+                            <div className="flex items-center space-x-3">
+                              <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                                <span className="text-blue-600 text-xs font-semibold">
+                                  {influencer.userId?.name?.charAt(0) || "I"}
+                                </span>
+                              </div>
+                              <div>
+                                <p className="text-sm font-medium">{influencer.userId?.name}</p>
+                                <p className="text-xs text-gray-500">{formatFollowers(totalFollowers)} followers</p>
+                              </div>
+                            </div>
+                            <div className="flex items-center space-x-1">
+                              <Star className="h-3 w-3 text-yellow-400 fill-current" />
+                              <span className="text-xs">{influencer.averageRating?.toFixed(1) || "0.0"}</span>
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+
+                    <Link href="/dashboard/brand/discover">
+                      <Button className="w-full mt-4" variant="ghost" size="sm">
+                        Discover More <ArrowUpRight className="h-3 w-3 ml-1" />
                       </Button>
                     </Link>
                   </CardContent>
@@ -456,6 +538,27 @@ export default function BrandDashboard() {
             </Card>
           </TabsContent>
 
+          <TabsContent value="influencers">
+            <Card>
+              <CardHeader>
+                <CardTitle>Discover Influencers</CardTitle>
+                <CardDescription>Find and connect with influencers that match your brand</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="text-center py-8">
+                  <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                  <p className="text-gray-500 mb-4">Find the perfect influencers for your campaigns</p>
+                  <Link href="/dashboard/brand/discover">
+                    <Button>
+                      <Eye className="h-4 w-4 mr-2" />
+                      Discover Influencers
+                    </Button>
+                  </Link>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
           <TabsContent value="applications">
             <Card>
               <CardHeader>
@@ -495,8 +598,29 @@ export default function BrandDashboard() {
               </CardContent>
             </Card>
           </TabsContent>
+
+          <TabsContent value="wallet">
+            <Card>
+              <CardHeader>
+                <CardTitle>Wallet & Payments</CardTitle>
+                <CardDescription>Manage your payments and transaction history</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="text-center py-8">
+                  <DollarSign className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                  <p className="text-gray-500 mb-4">Manage your payments and billing</p>
+                  <Link href="/dashboard/brand/wallet">
+                    <Button>
+                      <DollarSign className="h-4 w-4 mr-2" />
+                      Manage Payments
+                    </Button>
+                  </Link>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
         </Tabs>
       </div>
-    </BrandLayout>
+    </div>
   )
 }
