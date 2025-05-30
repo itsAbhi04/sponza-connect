@@ -419,7 +419,7 @@ export default function InfluencerDashboard() {
                 <CardContent>
                   <div className="text-2xl font-bold">{dashboardData?.stats.activeCampaigns || 0}</div>
                   <p className="text-xs text-muted-foreground">
-                    {dashboardData?.applications.pending || 0} pending review
+                    {dashboardData?.applications?.pending || 0} pending review
                   </p>
                 </CardContent>
               </Card>
@@ -445,9 +445,9 @@ export default function InfluencerDashboard() {
                   <Target className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">{dashboardData?.applications.successRate || 0}%</div>
+                  <div className="text-2xl font-bold">{dashboardData?.applications?.successRate || 0}%</div>
                   <p className="text-xs text-muted-foreground">
-                    {dashboardData?.applications.accepted || 0} of {dashboardData?.applications.total || 0} applications
+                    {dashboardData?.applications?.accepted || 0} of {dashboardData?.applications?.total || 0} applications
                   </p>
                 </CardContent>
               </Card>
@@ -597,9 +597,9 @@ export default function InfluencerDashboard() {
                       <div>
                         <div className="flex justify-between text-sm mb-1">
                           <span>Application Success Rate</span>
-                          <span>{dashboardData?.applications.successRate || 0}%</span>
+                          <span>{dashboardData?.applications?.successRate || 0}%</span>
                         </div>
-                        <Progress value={dashboardData?.applications.successRate || 0} />
+                        <Progress value={dashboardData?.applications?.successRate || 0} />
                       </div>
                       <div>
                         <div className="flex justify-between text-sm mb-1">
