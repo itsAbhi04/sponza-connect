@@ -2,8 +2,8 @@ import { type NextRequest, NextResponse } from "next/server"
 import { connectDB } from "@/lib/db"
 import { verifyToken } from "@/lib/auth"
 import Analytics from "@/lib/models/analytics"
-import Application from "@/lib/models/application"
-import Transaction from "@/lib/models/transaction"
+import {Application} from "@/lib/models/application"
+import {Transaction} from "@/lib/models/transaction"
 import { InfluencerProfile } from "@/lib/models/influencer-profile"
 
 export async function GET(request: NextRequest) {
@@ -91,7 +91,7 @@ export async function GET(request: NextRequest) {
 
     // Platform breakdown from profile
     const platformBreakdown =
-      profile?.socialMediaStats?.map((stat) => ({
+      profile?.socialMediaStats?.map((stat: { platform: any; followers: number; engagementRate: number }) => ({
         platform: stat.platform,
         followers: stat.followers,
         engagementRate: stat.engagementRate,
@@ -160,7 +160,7 @@ export async function GET(request: NextRequest) {
         averageEarningsPerCampaign,
         earningsGrowth,
         profileViews: analytics.reduce((sum, a) => sum + a.metrics.profileViews, 0),
-        totalFollowers: platformBreakdown.reduce((sum, p) => sum + p.followers, 0),
+        totalFollowers: platformBreakdown.reduce((sum: any, p: { followers: any }) => sum + p.followers, 0),
       },
       platformBreakdown,
       topPerformingContent,

@@ -1,7 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { connectDB } from "@/lib/db"
 import { verifyToken } from "@/lib/auth"
-import Chat from "@/lib/models/chat"
+import {Chat} from "@/lib/models/chat"
 import Message from "@/lib/models/message"
 
 export async function GET(request: NextRequest) {

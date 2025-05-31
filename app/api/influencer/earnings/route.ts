@@ -1,9 +1,9 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { connectDB } from "@/lib/db"
 import { verifyToken } from "@/lib/auth"
-import Transaction from "@/lib/models/transaction"
-import Application from "@/lib/models/application"
-import Wallet from "@/lib/models/wallet"
+import {Transaction} from "@/lib/models/transaction"
+import {Application} from "@/lib/models/application"
+import {Wallet} from "@/lib/models/wallet"
 
 export async function GET(request: NextRequest) {
   try {
