@@ -17,7 +17,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { ArrowLeft, Filter, Eye, Send, Loader2, DollarSign, Calendar, Target } from "lucide-react"
+import { ArrowLeft, Filter, Eye, Send, Loader2, DollarSign, Calendar, Target, SortAsc, SortDesc } from "lucide-react"
 import Link from "next/link"
 
 interface Campaign {
@@ -67,10 +67,15 @@ export default function InfluencerCampaignsPage() {
     total: 0,
     pages: 0,
   })
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc" | null>(null)
+  const [sortBy, setSortBy] = useState<string | null>(null)
+  const [applicationStatus, setApplicationStatus] = useState<{
+    [campaignId: string]: "pending" | "success" | "failed" | null
+  }>({})
 
   useEffect(() => {
     fetchCampaigns()
-  }, [filters, pagination.page])
+  }, [filters, pagination.page, sortOrder, sortBy])
 
   const fetchCampaigns = async () => {
     try {
@@ -83,6 +88,13 @@ export default function InfluencerCampaignsPage() {
       Object.entries(filters).forEach(([key, value]) => {
         if (value && value !== "all") params.append(key, value)
       })
+
+      if (sortBy) {
+        params.append("sortBy", sortBy)
+        if (sortOrder) {
+          params.append("sortOrder", sortOrder)
+        }
+      }
 
       const response = await fetch(`/api/influencer/campaigns/discover?${params.toString()}`)
       const data = await response.json()
@@ -109,6 +121,7 @@ export default function InfluencerCampaignsPage() {
     try {
       setApplying(campaignId)
       setError("")
+      setApplicationStatus((prev) => ({ ...prev, [campaignId]: "pending" }))
 
       const response = await fetch(`/api/campaigns/${campaignId}/applications`, {
         method: "POST",
@@ -127,13 +140,16 @@ export default function InfluencerCampaignsPage() {
         setSuccess("Application submitted successfully!")
         setApplicationData({ proposal: "", pricing: "" })
         setSelectedCampaign(null)
+        setApplicationStatus((prev) => ({ ...prev, [campaignId]: "success" }))
         // Remove applied campaign from list
         setCampaigns(campaigns.filter((c) => c._id !== campaignId))
       } else {
         setError(data.error || "Failed to submit application")
+        setApplicationStatus((prev) => ({ ...prev, [campaignId]: "failed" }))
       }
     } catch (err) {
       setError("Failed to submit application")
+      setApplicationStatus((prev) => ({ ...prev, [campaignId]: "failed" }))
     } finally {
       setApplying(null)
     }
@@ -185,6 +201,15 @@ export default function InfluencerCampaignsPage() {
         return "👥"
       default:
         return "📱"
+    }
+  }
+
+  const handleSort = (field: string) => {
+    if (sortBy === field) {
+      setSortOrder(sortOrder === "asc" ? "desc" : "asc")
+    } else {
+      setSortBy(field)
+      setSortOrder("asc")
     }
   }
 
@@ -296,6 +321,36 @@ export default function InfluencerCampaignsPage() {
           </div>
         ) : (
           <>
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-semibold">Available Campaigns</h2>
+              <div className="space-x-2">
+                <Button variant="outline" size="sm" onClick={() => handleSort("budget")}>
+                  Sort by Budget
+                  {sortBy === "budget" && (
+                    <>
+                      {sortOrder === "asc" ? (
+                        <SortAsc className="h-4 w-4 ml-1" />
+                      ) : (
+                        <SortDesc className="h-4 w-4 ml-1" />
+                      )}
+                    </>
+                  )}
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => handleSort("timeline.endDate")}>
+                  Sort by End Date
+                  {sortBy === "timeline.endDate" && (
+                    <>
+                      {sortOrder === "asc" ? (
+                        <SortAsc className="h-4 w-4 ml-1" />
+                      ) : (
+                        <SortDesc className="h-4 w-4 ml-1" />
+                      )}
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
+
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {campaigns.map((campaign) => (
                 <Card key={campaign._id} className="hover:shadow-lg transition-shadow duration-200">
@@ -417,9 +472,21 @@ export default function InfluencerCampaignsPage() {
 
                         <Dialog>
                           <DialogTrigger asChild>
-                            <Button size="sm" className="flex-1" onClick={() => setSelectedCampaign(campaign)}>
+                            <Button
+                              size="sm"
+                              className="flex-1"
+                              onClick={() => setSelectedCampaign(campaign)}
+                              disabled={
+                                applicationStatus[campaign._id] === "pending" ||
+                                applicationStatus[campaign._id] === "success"
+                              }
+                            >
                               <Send className="h-4 w-4 mr-2" />
-                              Apply
+                              {applicationStatus[campaign._id] === "pending"
+                                ? "Applying..."
+                                : applicationStatus[campaign._id] === "success"
+                                  ? "Applied"
+                                  : "Apply"}
                             </Button>
                           </DialogTrigger>
                           <DialogContent>
@@ -457,6 +524,12 @@ export default function InfluencerCampaignsPage() {
                                 />
                               </div>
 
+                              {applicationStatus[selectedCampaign?._id] === "failed" && (
+                                <Alert variant="destructive">
+                                  <AlertDescription>Application failed. Please try again.</AlertDescription>
+                                </Alert>
+                              )}
+
                               <div className="flex justify-end space-x-2">
                                 <Button
                                   variant="outline"
@@ -470,9 +543,13 @@ export default function InfluencerCampaignsPage() {
                                 </Button>
                                 <Button
                                   onClick={() => handleApply(selectedCampaign!._id)}
-                                  disabled={applying === selectedCampaign?._id}
+                                  disabled={
+                                    applying === selectedCampaign?._id ||
+                                    applicationStatus[selectedCampaign?._id] === "pending"
+                                  }
                                 >
-                                  {applying === selectedCampaign?._id ? (
+                                  {applying === selectedCampaign?._id ||
+                                  applicationStatus[selectedCampaign?._id] === "pending" ? (
                                     <>
                                       <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                                       Submitting...

@@ -2,13 +2,76 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { ArrowUpRight, ArrowDownLeft, Wallet, CreditCard, Building2, History, TrendingUp } from "lucide-react"
+import { ArrowUpRight, Wallet, CreditCard, Building2, History, TrendingUp, ShieldCheck } from "lucide-react"
+import { useState } from "react"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"
+import { useToast } from "@/components/ui/use-toast"
 
 export default function WalletPage() {
+  const [withdrawalAmount, setWithdrawalAmount] = useState("")
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState("")
+  const { toast } = useToast()
+
+  const handleWithdrawalRequest = () => {
+    if (!withdrawalAmount || !selectedPaymentMethod) {
+      toast({
+        title: "Error",
+        description: "Please enter withdrawal amount and select payment method.",
+        variant: "destructive",
+      })
+      return
+    }
+
+    // Simulate withdrawal request
+    toast({
+      title: "Withdrawal Request Sent",
+      description: `Withdrawal request of $${withdrawalAmount} sent via ${selectedPaymentMethod}.`,
+    })
+    setWithdrawalAmount("")
+    setSelectedPaymentMethod("")
+  }
+
+  const transactions = [
+    {
+      id: 1,
+      type: "income",
+      description: "Fashion Brand Campaign",
+      date: "2 days ago",
+      amount: 500,
+      platform: "Instagram Reels",
+    },
+    {
+      id: 2,
+      type: "withdrawal",
+      description: "Withdrawal to Bank",
+      date: "1 week ago",
+      amount: -1000,
+      platform: "Bank Transfer",
+    },
+    {
+      id: 3,
+      type: "income",
+      description: "Tech Brand Campaign",
+      date: "2 weeks ago",
+      amount: 750,
+      platform: "YouTube Video",
+    },
+  ]
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50 py-12">
-      <div className="container mx-auto px-4">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="max-w-6xl mx-auto">
           {/* Header */}
           <div className="text-center mb-8">
@@ -18,7 +81,7 @@ export default function WalletPage() {
 
           {/* Balance Overview */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            <Card>
+            <Card className="shadow-md">
               <CardHeader>
                 <CardTitle className="text-lg">Available Balance</CardTitle>
                 <CardDescription>Ready to withdraw</CardDescription>
@@ -31,7 +94,7 @@ export default function WalletPage() {
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className="shadow-md">
               <CardHeader>
                 <CardTitle className="text-lg">Pending Earnings</CardTitle>
                 <CardDescription>From active campaigns</CardDescription>
@@ -44,7 +107,7 @@ export default function WalletPage() {
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className="shadow-md">
               <CardHeader>
                 <CardTitle className="text-lg">Total Earnings</CardTitle>
                 <CardDescription>All time</CardDescription>
@@ -62,7 +125,7 @@ export default function WalletPage() {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Left Column - Withdrawal Methods */}
             <div className="space-y-6">
-              <Card>
+              <Card className="shadow-md">
                 <CardHeader>
                   <CardTitle>Withdrawal Methods</CardTitle>
                   <CardDescription>Add or manage your payment methods</CardDescription>
@@ -93,7 +156,9 @@ export default function WalletPage() {
                         <p className="text-sm text-gray-500">john@example.com</p>
                       </div>
                     </div>
-                    <Button variant="outline" size="sm">Set Default</Button>
+                    <Button variant="outline" size="sm">
+                      Set Default
+                    </Button>
                   </div>
 
                   <Button className="w-full">
@@ -104,18 +169,61 @@ export default function WalletPage() {
               </Card>
 
               {/* Quick Actions */}
-              <Card>
+              <Card className="shadow-md">
                 <CardHeader>
                   <CardTitle>Quick Actions</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <Button className="w-full">
-                    <ArrowUpRight className="h-4 w-4 mr-2" />
-                    Withdraw Funds
-                  </Button>
+                  <Dialog>
+                    <DialogTrigger asChild>
+                      <Button className="w-full">
+                        <ArrowUpRight className="h-4 w-4 mr-2" />
+                        Withdraw Funds
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="sm:max-w-[425px]">
+                      <DialogHeader>
+                        <DialogTitle>Withdraw Funds</DialogTitle>
+                        <DialogDescription>Enter the amount to withdraw and select a payment method.</DialogDescription>
+                      </DialogHeader>
+                      <div className="grid gap-4 py-4">
+                        <div className="grid grid-cols-4 items-center gap-4">
+                          <Label htmlFor="amount" className="text-right">
+                            Amount
+                          </Label>
+                          <Input
+                            type="number"
+                            id="amount"
+                            value={withdrawalAmount}
+                            onChange={(e) => setWithdrawalAmount(e.target.value)}
+                            className="col-span-3"
+                          />
+                        </div>
+                        <div className="grid grid-cols-4 items-center gap-4">
+                          <Label htmlFor="paymentMethod" className="text-right">
+                            Payment Method
+                          </Label>
+                          <Select onValueChange={setSelectedPaymentMethod}>
+                            <SelectTrigger className="col-span-3">
+                              <SelectValue placeholder="Select a payment method" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="bank">Bank Account</SelectItem>
+                              <SelectItem value="paypal">PayPal</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+                      <Button onClick={handleWithdrawalRequest}>Request Withdrawal</Button>
+                    </DialogContent>
+                  </Dialog>
                   <Button variant="outline" className="w-full">
                     <History className="h-4 w-4 mr-2" />
                     View Transaction History
+                  </Button>
+                  <Button variant="destructive" className="w-full flex items-center justify-center gap-2">
+                    <ShieldCheck className="h-4 w-4 mr-2" />
+                    Security Check
                   </Button>
                 </CardContent>
               </Card>
@@ -123,7 +231,7 @@ export default function WalletPage() {
 
             {/* Right Column - Transaction History */}
             <div className="lg:col-span-2">
-              <Card>
+              <Card className="shadow-md">
                 <CardHeader>
                   <div className="flex items-center justify-between">
                     <div>
@@ -137,58 +245,32 @@ export default function WalletPage() {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-4">
-                    {/* Transaction 1 */}
-                    <div className="flex items-center justify-between p-4 border rounded-lg">
-                      <div className="flex items-center gap-4">
-                        <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
-                          <ArrowDownLeft className="h-5 w-5 text-green-600" />
-                        </div>
-                        <div>
-                          <h3 className="font-semibold">Fashion Brand Campaign</h3>
-                          <p className="text-sm text-gray-500">Completed • 2 days ago</p>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <p className="font-semibold text-green-600">+$500.00</p>
-                        <p className="text-sm text-gray-500">Instagram Reels</p>
-                      </div>
-                    </div>
-
-                    {/* Transaction 2 */}
-                    <div className="flex items-center justify-between p-4 border rounded-lg">
-                      <div className="flex items-center gap-4">
-                        <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
-                          <ArrowUpRight className="h-5 w-5 text-blue-600" />
-                        </div>
-                        <div>
-                          <h3 className="font-semibold">Withdrawal to Bank</h3>
-                          <p className="text-sm text-gray-500">Processed • 1 week ago</p>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <p className="font-semibold text-blue-600">-$1,000.00</p>
-                        <p className="text-sm text-gray-500">Bank Transfer</p>
-                      </div>
-                    </div>
-
-                    {/* Transaction 3 */}
-                    <div className="flex items-center justify-between p-4 border rounded-lg">
-                      <div className="flex items-center gap-4">
-                        <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
-                          <ArrowDownLeft className="h-5 w-5 text-green-600" />
-                        </div>
-                        <div>
-                          <h3 className="font-semibold">Tech Brand Campaign</h3>
-                          <p className="text-sm text-gray-500">Completed • 2 weeks ago</p>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <p className="font-semibold text-green-600">+$750.00</p>
-                        <p className="text-sm text-gray-500">YouTube Video</p>
-                      </div>
-                    </div>
-                  </div>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="w-[100px]">Type</TableHead>
+                        <TableHead>Description</TableHead>
+                        <TableHead>Date</TableHead>
+                        <TableHead className="text-right">Amount</TableHead>
+                        <TableHead>Platform</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {transactions.map((transaction) => (
+                        <TableRow key={transaction.id}>
+                          <TableCell>{transaction.type === "income" ? "Income" : "Withdrawal"}</TableCell>
+                          <TableCell>{transaction.description}</TableCell>
+                          <TableCell>{transaction.date}</TableCell>
+                          <TableCell className="text-right">
+                            {transaction.amount > 0
+                              ? `+$${transaction.amount.toFixed(2)}`
+                              : `-$${Math.abs(transaction.amount).toFixed(2)}`}
+                          </TableCell>
+                          <TableCell>{transaction.platform}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
                 </CardContent>
               </Card>
             </div>

@@ -25,6 +25,8 @@ import {
   Minus,
 } from "lucide-react"
 import { EnhancedInfluencerLayout } from "@/components/layouts/enhanced-influencer-layout"
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts"
+import { useMediaQuery } from "usehooks-ts"
 
 interface EarningsData {
   overview: {
@@ -39,6 +41,7 @@ interface EarningsData {
   withdrawalMethods: any[]
   earningsHistory: any[]
   taxInfo: any
+  withdrawalHistory: any[]
 }
 
 export default function InfluencerEarningsPage() {
@@ -48,6 +51,8 @@ export default function InfluencerEarningsPage() {
   const [withdrawalAmount, setWithdrawalAmount] = useState("")
   const [selectedMethod, setSelectedMethod] = useState("")
   const [showWithdrawal, setShowWithdrawal] = useState(false)
+  const [showWithdrawalHistory, setShowWithdrawalHistory] = useState(false)
+  const isMobile = useMediaQuery("(max-width: 768px)")
 
   useEffect(() => {
     fetchEarningsData()
@@ -132,6 +137,33 @@ export default function InfluencerEarningsPage() {
     }
   }
 
+  const downloadEarningsData = () => {
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(earningsData))
+    const downloadAnchorNode = document.createElement("a")
+    downloadAnchorNode.setAttribute("href", dataStr)
+    downloadAnchorNode.setAttribute("download", "earnings_data.json")
+    document.body.appendChild(downloadAnchorNode) // required for firefox
+    downloadAnchorNode.click()
+    downloadAnchorNode.remove()
+  }
+
+  const monthlyEarningsData = earningsData?.earningsHistory?.reduce((acc: any, curr: any) => {
+    const month = new Date(curr.completedAt).toLocaleString("default", { month: "short" })
+    if (acc[month]) {
+      acc[month] += curr.earnings
+    } else {
+      acc[month] = curr.earnings
+    }
+    return acc
+  }, {})
+
+  const chartData = monthlyEarningsData
+    ? Object.keys(monthlyEarningsData).map((month) => ({
+        month,
+        earnings: monthlyEarningsData[month],
+      }))
+    : []
+
   if (loading) {
     return (
       <EnhancedInfluencerLayout>
@@ -174,6 +206,10 @@ export default function InfluencerEarningsPage() {
             <Button onClick={() => setShowWithdrawal(true)}>
               <Wallet className="h-4 w-4 mr-2" />
               Withdraw
+            </Button>
+            <Button variant="outline" onClick={downloadEarningsData}>
+              <Download className="h-4 w-4 mr-2" />
+              Export
             </Button>
           </div>
         </div>
@@ -235,11 +271,12 @@ export default function InfluencerEarningsPage() {
         </div>
 
         <Tabs defaultValue="transactions" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className={`grid w-full ${isMobile ? "grid-cols-2" : "grid-cols-5"}`}>
             <TabsTrigger value="transactions">Transactions</TabsTrigger>
             <TabsTrigger value="history">Earnings History</TabsTrigger>
             <TabsTrigger value="methods">Payment Methods</TabsTrigger>
             <TabsTrigger value="tax">Tax Information</TabsTrigger>
+            <TabsTrigger value="withdrawals">Withdrawal History</TabsTrigger>
           </TabsList>
 
           <TabsContent value="transactions" className="space-y-6">
@@ -289,9 +326,22 @@ export default function InfluencerEarningsPage() {
                 <CardDescription>Monthly breakdown of your earnings</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="h-[400px] bg-gray-50 rounded-lg flex items-center justify-center">
-                  <span className="text-gray-500">Earnings Chart</span>
-                </div>
+                {chartData.length > 0 ? (
+                  <ResponsiveContainer width="100%" height={300}>
+                    <BarChart data={chartData}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="month" />
+                      <YAxis tickFormatter={(value) => formatCurrency(value as number)} />
+                      <Tooltip formatter={(value) => formatCurrency(value as number)} />
+                      <Legend />
+                      <Bar dataKey="earnings" fill="#82ca9d" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="h-[400px] bg-gray-50 rounded-lg flex items-center justify-center">
+                    <span className="text-gray-500">No earnings data available for the selected period.</span>
+                  </div>
+                )}
               </CardContent>
             </Card>
 
@@ -443,6 +493,39 @@ export default function InfluencerEarningsPage() {
                       </div>
                     </div>
                   </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="withdrawals" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Withdrawal History</CardTitle>
+                <CardDescription>Status of your recent withdrawals</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {earningsData?.withdrawalHistory?.map((withdrawal) => (
+                    <div key={withdrawal._id} className="flex items-center justify-between p-4 border rounded-lg">
+                      <div className="flex items-center space-x-4">
+                        <Wallet className="h-4 w-4 text-purple-600" />
+                        <div>
+                          <p className="font-medium">Withdrawal Request</p>
+                          <p className="text-sm text-gray-500">{formatDate(withdrawal.createdAt)}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center space-x-4">
+                        <div className="text-right">
+                          <p className="font-semibold text-purple-600">-{formatCurrency(withdrawal.amount)}</p>
+                          <div className="flex items-center space-x-1">
+                            {getStatusIcon(withdrawal.status)}
+                            <span className="text-xs text-gray-500 capitalize">{withdrawal.status}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </CardContent>
             </Card>

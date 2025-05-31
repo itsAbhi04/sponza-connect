@@ -1,5 +1,7 @@
 "use client"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import type React from "react"
+
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -7,15 +9,60 @@ import { Textarea } from "@/components/ui/textarea"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
 import { Switch } from "@/components/ui/switch"
-import { Sparkles, Instagram, Youtube, Twitter, Globe, Plus, Trash2 } from "lucide-react"
-import { useState } from "react"
+import { Sparkles, Instagram, Youtube, Twitter, Globe, Plus, Trash2, CheckCircle } from "lucide-react"
+import { useState, useRef } from "react"
+import { Progress } from "@/components/ui/progress"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 
 export default function InfluencerProfilePage() {
   const [socialLinks, setSocialLinks] = useState([
-    { platform: "Instagram", username: "@sarahcreates", followers: "50K" },
-    { platform: "YouTube", username: "Sarah Creates", followers: "25K" },
-    { platform: "TikTok", username: "@sarahcreates", followers: "100K" },
+    { platform: "Instagram", username: "@sarahcreates", followers: "50K", verified: true },
+    { platform: "YouTube", username: "Sarah Creates", followers: "25K", verified: false },
+    { platform: "TikTok", username: "@sarahcreates", followers: "100K", verified: false },
   ])
+  const [profilePicture, setProfilePicture] = useState<string | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [completion, setCompletion] = useState(75)
+
+  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (file) {
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        setProfilePicture(reader.result as string)
+      }
+      reader.readAsDataURL(file)
+    }
+  }
+
+  const handleAddSocialProfile = () => {
+    // Logic to add a new social profile (e.g., open a modal)
+    alert("Add Social Profile functionality to be implemented")
+  }
+
+  const handleRemoveSocialLink = (index: number) => {
+    const newSocialLinks = [...socialLinks]
+    newSocialLinks.splice(index, 1)
+    setSocialLinks(newSocialLinks)
+  }
+
+  const handlePortfolioItemAdd = () => {
+    alert("Add Portfolio Item functionality to be implemented")
+  }
+
+  const triggerFileInput = () => {
+    fileInputRef.current?.click()
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50 py-12">
@@ -32,17 +79,19 @@ export default function InfluencerProfilePage() {
             <CardHeader>
               <div className="flex items-center justify-between">
                 <CardTitle>Profile Completion</CardTitle>
-                <Badge className="bg-purple-100 text-purple-700">75% Complete</Badge>
+                <Badge className="bg-purple-100 text-purple-700">{completion}% Complete</Badge>
               </div>
+              <CardDescription>Complete all sections to get discovered by more brands.</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
+                <Progress value={completion} className="h-2" />
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Sparkles className="h-5 w-5 text-purple-600" />
                     <span>Add portfolio items</span>
                   </div>
-                  <Button variant="outline" size="sm">
+                  <Button variant="outline" size="sm" onClick={handlePortfolioItemAdd}>
                     Add Now
                   </Button>
                 </div>
@@ -60,7 +109,7 @@ export default function InfluencerProfilePage() {
                     <Sparkles className="h-5 w-5 text-purple-600" />
                     <span>Add social media links</span>
                   </div>
-                  <Button variant="outline" size="sm">
+                  <Button variant="outline" size="sm" onClick={handleAddSocialProfile}>
                     Add Now
                   </Button>
                 </div>
@@ -70,7 +119,7 @@ export default function InfluencerProfilePage() {
 
           {/* Profile Sections */}
           <Tabs defaultValue="basic" className="space-y-8">
-            <TabsList className="grid grid-cols-4">
+            <TabsList className="grid grid-cols-1 md:grid-cols-4">
               <TabsTrigger value="basic">Basic Info</TabsTrigger>
               <TabsTrigger value="social">Social Media</TabsTrigger>
               <TabsTrigger value="pricing">Pricing</TabsTrigger>
@@ -86,9 +135,16 @@ export default function InfluencerProfilePage() {
                 </CardHeader>
                 <CardContent>
                   <form className="space-y-6">
-                    <div className="space-y-2">
-                      <Label htmlFor="name">Full Name</Label>
-                      <Input id="name" placeholder="Sarah Johnson" />
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="name">Full Name</Label>
+                        <Input id="name" placeholder="Sarah Johnson" />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="niche">Primary Niche</Label>
+                        <Input id="niche" placeholder="Fashion, Beauty, Lifestyle" />
+                      </div>
                     </div>
 
                     <div className="space-y-2">
@@ -100,14 +156,42 @@ export default function InfluencerProfilePage() {
                       />
                     </div>
 
-                    <div className="space-y-2">
-                      <Label htmlFor="niche">Primary Niche</Label>
-                      <Input id="niche" placeholder="Fashion, Beauty, Lifestyle" />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="location">Location</Label>
-                      <Input id="location" placeholder="Mumbai, India" />
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="location">Location</Label>
+                        <Input id="location" placeholder="Mumbai, India" />
+                      </div>
+                      <div>
+                        <Label>Profile Picture</Label>
+                        <div className="relative w-32 h-32 rounded-full overflow-hidden">
+                          {profilePicture ? (
+                            <img
+                              src={profilePicture || "/placeholder.svg"}
+                              alt="Profile"
+                              className="object-cover w-full h-full"
+                            />
+                          ) : (
+                            <div className="w-full h-full bg-gray-100 flex items-center justify-center">
+                              <span className="text-gray-500">No Image</span>
+                            </div>
+                          )}
+                          <Button
+                            variant="secondary"
+                            size="icon"
+                            className="absolute bottom-0 right-0 transform translate-x-1/4 translate-y-1/4"
+                            onClick={triggerFileInput}
+                          >
+                            <Plus className="h-4 w-4" />
+                          </Button>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={handleImageUpload}
+                            className="hidden"
+                            ref={fileInputRef}
+                          />
+                        </div>
+                      </div>
                     </div>
 
                     <div className="flex items-center justify-between">
@@ -146,13 +230,38 @@ export default function InfluencerProfilePage() {
                             <p className="text-xs text-gray-500">{link.followers} followers</p>
                           </div>
                         </div>
-                        <Button variant="ghost" size="sm">
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+                        <div className="flex gap-2">
+                          {link.verified ? (
+                            <CheckCircle className="h-5 w-5 text-green-500" />
+                          ) : (
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button variant="outline" size="sm">
+                                  Verify
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Social Media Verification</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    To verify your {link.platform} account, please connect to our verification system.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                  <AlertDialogAction>Connect</AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          )}
+                          <Button variant="ghost" size="sm" onClick={() => handleRemoveSocialLink(index)}>
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </div>
                     ))}
 
-                    <Button variant="outline" className="w-full">
+                    <Button variant="outline" className="w-full" onClick={handleAddSocialProfile}>
                       <Plus className="h-4 w-4 mr-2" />
                       Add Social Profile
                     </Button>
@@ -252,7 +361,7 @@ export default function InfluencerProfilePage() {
                       </Card>
                     </div>
 
-                    <Button variant="outline" className="w-full">
+                    <Button variant="outline" className="w-full" onClick={handlePortfolioItemAdd}>
                       <Plus className="h-4 w-4 mr-2" />
                       Add Portfolio Item
                     </Button>
