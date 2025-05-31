@@ -66,7 +66,7 @@ Sponza Connect bridges brands and influencers through an AI-powered platform, en
 ## 📦 Dependencies
 
 ### Core Dependencies
-```json
+\`\`\`json
 {
   "next": "15.2.4",
   "react": "^19",
@@ -75,56 +75,56 @@ Sponza Connect bridges brands and influencers through an AI-powered platform, en
   "razorpay": "latest",
   "tailwindcss": "^3.4.17"
 }
-```
+\`\`\`
 
 ### UI Components
-```json
+\`\`\`json
 {
   "@radix-ui/react-*": "Various UI components",
   "lucide-react": "^0.454.0",
   "class-variance-authority": "^0.7.1",
   "tailwind-merge": "^2.5.5"
 }
-```
+\`\`\`
 
 ## 🚀 Getting Started
 
 1. **Clone and Install:**
-```bash
+\`\`\`bash
 git clone https://github.com/yourusername/sponza-connect.git
 cd sponza-connect
 npm install
-```
+\`\`\`
 
 2. **Environment Setup:**
-```bash
+\`\`\`bash
 cp .env.example .env.local
-```
+\`\`\`
 
 Required environment variables:
-```env
+\`\`\`env
 MONGODB_URI=your_mongodb_uri
 RAZORPAY_KEY_ID=your_razorpay_key
 RAZORPAY_KEY_SECRET=your_razorpay_secret
 JWT_SECRET=your_jwt_secret
 AWS_ACCESS_KEY=your_aws_key
 AWS_SECRET_KEY=your_aws_secret
-```
+\`\`\`
 
 3. **Development:**
-```bash
+\`\`\`bash
 npm run dev
-```
+\`\`\`
 
 4. **Build & Deploy:**
-```bash
+\`\`\`bash
 npm run build
 npm start
-```
+\`\`\`
 
 ## 📁 Project Structure
 
-```
+\`\`\`
 sponza-connect/
 ├── app/                    
 │   ├── admin/             # Admin dashboard
@@ -142,7 +142,7 @@ sponza-connect/
 │   └── config/           # Configuration
 ├── public/               # Static assets
 └── styles/              # Global styles
-```
+\`\`\`
 
 ## 🔒 Security Features
 
