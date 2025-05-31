@@ -1,31 +1,29 @@
 "use client"
 
 import type React from "react"
+
 import { useState, useEffect } from "react"
+import { usePathname } from "next/navigation"
 import Link from "next/link"
-import { usePathname, useRouter } from "next/navigation"
-import { cn } from "@/lib/utils"
+import { Button } from "@/components/ui/button"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Badge } from "@/components/ui/badge"
+import { MobileBottomNav } from "./mobile-bottom-nav"
 import {
-  LayoutDashboard,
+  BarChart3,
+  FileText,
   Target,
   DollarSign,
-  BarChart3,
   MessageSquare,
-  Settings,
   Bell,
-  LogOut,
+  Settings,
+  User,
+  Wallet,
   Menu,
   X,
-  Calendar,
-  User,
-  Briefcase,
-  Wallet,
-  Star,
-  Gift,
+  LogOut,
+  ChevronDown,
 } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -35,283 +33,298 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 
-const navigation = [
-  { name: "Dashboard", href: "/dashboard/influencer", icon: LayoutDashboard },
-  { name: "Campaigns", href: "/dashboard/influencer/campaigns", icon: Target },
-  { name: "Applications", href: "/dashboard/influencer/applications", icon: Briefcase },
-  { name: "Earnings", href: "/dashboard/influencer/earnings", icon: DollarSign },
-  { name: "Analytics", href: "/dashboard/influencer/analytics", icon: BarChart3 },
-  { name: "Messages", href: "/dashboard/influencer/messages", icon: MessageSquare },
-  { name: "Calendar", href: "/dashboard/influencer/calendar", icon: Calendar },
-  { name: "Wallet", href: "/dashboard/influencer/wallet", icon: Wallet },
-]
-
-const mobileNavigation = [
-  { name: "Dashboard", href: "/dashboard/influencer", icon: LayoutDashboard },
-  { name: "Campaigns", href: "/dashboard/influencer/campaigns", icon: Target },
-  { name: "Applications", href: "/dashboard/influencer/applications", icon: Briefcase },
-  { name: "Messages", href: "/dashboard/influencer/messages", icon: MessageSquare },
-  { name: "Profile", href: "/dashboard/influencer/profile", icon: User },
-]
-
-interface InfluencerLayoutProps {
+interface EnhancedInfluencerLayoutProps {
   children: React.ReactNode
 }
 
-export function EnhancedInfluencerLayout({ children }: InfluencerLayoutProps) {
+export function EnhancedInfluencerLayout({ children }: EnhancedInfluencerLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
-  const [user, setUser] = useState<any>(null)
-  const [notifications, setNotifications] = useState(0)
-  const [profileRating, setProfileRating] = useState(0)
+  const [unreadMessages, setUnreadMessages] = useState(0)
+  const [unreadNotifications, setUnreadNotifications] = useState(0)
   const pathname = usePathname()
-  const router = useRouter()
+
+  const navItems = [
+    {
+      href: "/dashboard/influencer",
+      icon: BarChart3,
+      label: "Dashboard",
+      badge: null,
+    },
+    {
+      href: "/dashboard/influencer/analytics",
+      icon: BarChart3,
+      label: "Analytics",
+      badge: null,
+    },
+    {
+      href: "/dashboard/influencer/applications",
+      icon: FileText,
+      label: "Applications",
+      badge: null,
+    },
+    {
+      href: "/dashboard/influencer/campaigns",
+      icon: Target,
+      label: "Campaigns",
+      badge: null,
+    },
+    {
+      href: "/dashboard/influencer/earnings",
+      icon: DollarSign,
+      label: "Earnings",
+      badge: null,
+    },
+    {
+      href: "/dashboard/influencer/messages",
+      icon: MessageSquare,
+      label: "Messages",
+      badge: unreadMessages > 0 ? unreadMessages : null,
+    },
+    {
+      href: "/dashboard/influencer/notifications",
+      icon: Bell,
+      label: "Notifications",
+      badge: unreadNotifications > 0 ? unreadNotifications : null,
+    },
+    {
+      href: "/dashboard/influencer/preferences",
+      icon: Settings,
+      label: "Preferences",
+      badge: null,
+    },
+    {
+      href: "/dashboard/influencer/profile",
+      icon: User,
+      label: "Profile",
+      badge: null,
+    },
+    {
+      href: "/dashboard/influencer/settings",
+      icon: Settings,
+      label: "Settings",
+      badge: null,
+    },
+    {
+      href: "/dashboard/influencer/wallet",
+      icon: Wallet,
+      label: "Wallet",
+      badge: null,
+    },
+  ]
 
   useEffect(() => {
-    fetchUserData()
-    fetchNotifications()
-    fetchProfileRating()
+    // Fetch unread counts
+    const fetchUnreadCounts = async () => {
+      try {
+        const [messagesRes, notificationsRes] = await Promise.all([
+          fetch("/api/influencer/messages/unread-count"),
+          fetch("/api/influencer/notifications?unread=true"),
+        ])
+
+        if (messagesRes.ok) {
+          const messagesData = await messagesRes.json()
+          setUnreadMessages(messagesData.count || 0)
+        }
+
+        if (notificationsRes.ok) {
+          const notificationsData = await notificationsRes.json()
+          setUnreadNotifications(notificationsData.unreadCount || 0)
+        }
+      } catch (error) {
+        console.error("Failed to fetch unread counts:", error)
+      }
+    }
+
+    fetchUnreadCounts()
+
+    // Set up polling for real-time updates
+    const interval = setInterval(fetchUnreadCounts, 30000) // Poll every 30 seconds
+
+    return () => clearInterval(interval)
   }, [])
-
-  const fetchUserData = async () => {
-    try {
-      const response = await fetch("/api/auth/me")
-      if (response.ok) {
-        const data = await response.json()
-        setUser(data.user)
-      }
-    } catch (error) {
-      console.error("Failed to fetch user data:", error)
-    }
-  }
-
-  const fetchNotifications = async () => {
-    try {
-      const response = await fetch("/api/notifications?unread=true")
-      if (response.ok) {
-        const data = await response.json()
-        setNotifications(data.count || 0)
-      }
-    } catch (error) {
-      console.error("Failed to fetch notifications:", error)
-    }
-  }
-
-  const fetchProfileRating = async () => {
-    try {
-      const response = await fetch("/api/influencer/profile/rating")
-      if (response.ok) {
-        const data = await response.json()
-        setProfileRating(data.rating || 0)
-      }
-    } catch (error) {
-      console.error("Failed to fetch profile rating:", error)
-    }
-  }
 
   const handleLogout = async () => {
     try {
       await fetch("/api/auth/logout", { method: "POST" })
-      router.push("/")
+      window.location.href = "/auth/login"
     } catch (error) {
-      console.error("Logout error:", error)
+      console.error("Logout failed:", error)
     }
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-blue-50">
-      {/* Mobile sidebar backdrop */}
-      <div
-        className={cn("fixed inset-0 z-50 bg-black/50 backdrop-blur-sm lg:hidden", sidebarOpen ? "block" : "hidden")}
-        onClick={() => setSidebarOpen(false)}
-      />
-
+    <div className="min-h-screen bg-gray-50">
       {/* Desktop Sidebar */}
-      <div
-        className={cn(
-          "fixed inset-y-0 left-0 z-50 w-72 transform bg-white/95 backdrop-blur-xl border-r border-green-200/60 shadow-xl transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0",
-          sidebarOpen ? "translate-x-0" : "-translate-x-full",
-        )}
-      >
-        <div className="flex h-16 items-center justify-between px-6 border-b border-green-200/60">
-          <Link href="/dashboard/influencer" className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-gradient-to-r from-green-600 via-blue-600 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
-              <span className="text-white font-bold text-lg">S</span>
-            </div>
-            <div>
-              <span className="text-xl font-bold bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-transparent">
-                Sponza
-              </span>
-              <div className="text-xs text-slate-500 font-medium">Creator Studio</div>
-            </div>
-          </Link>
-          <Button variant="ghost" size="icon" className="lg:hidden" onClick={() => setSidebarOpen(false)}>
-            <X className="h-5 w-5" />
-          </Button>
-        </div>
-
-        {/* Profile Summary */}
-        <div className="px-6 py-4 border-b border-green-200/60">
-          <div className="flex items-center space-x-3">
-            <Avatar className="h-12 w-12">
-              <AvatarImage src={user?.profilePicture || "/placeholder.svg"} alt="Influencer" />
-              <AvatarFallback className="bg-gradient-to-r from-green-500 to-blue-500 text-white">
-                {user?.name?.charAt(0) || "I"}
-              </AvatarFallback>
-            </Avatar>
-            <div className="flex-1">
-              <p className="font-medium text-sm">{user?.name || "Creator"}</p>
-              <div className="flex items-center space-x-2">
-                <div className="flex items-center">
-                  {[...Array(5)].map((_, i) => (
-                    <Star
-                      key={i}
-                      className={cn(
-                        "h-3 w-3",
-                        i < Math.floor(profileRating) ? "text-yellow-400 fill-current" : "text-gray-300",
-                      )}
-                    />
-                  ))}
+      <div className="hidden md:fixed md:inset-y-0 md:flex md:w-64 md:flex-col">
+        <div className="flex min-h-0 flex-1 flex-col bg-white shadow-lg">
+          <div className="flex flex-1 flex-col overflow-y-auto pt-5 pb-4">
+            <div className="flex flex-shrink-0 items-center px-4">
+              <Link href="/" className="flex items-center space-x-2">
+                <div className="w-8 h-8 bg-gradient-to-r from-green-500 to-blue-500 rounded-lg flex items-center justify-center">
+                  <span className="text-white font-bold text-sm">S</span>
                 </div>
-                <span className="text-xs text-slate-500">{profileRating.toFixed(1)}</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto">
-          {navigation.map((item) => {
-            const isActive = pathname === item.href || pathname.startsWith(item.href + "/")
-            return (
-              <Link
-                key={item.name}
-                href={item.href}
-                className={cn(
-                  "flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200",
-                  isActive
-                    ? "bg-gradient-to-r from-green-500 to-blue-500 text-white shadow-lg shadow-green-500/25"
-                    : "text-slate-600 hover:bg-slate-100 hover:text-slate-900",
-                )}
-              >
-                <item.icon className={cn("mr-3 h-5 w-5", isActive ? "text-white" : "text-slate-400")} />
-                {item.name}
+                <span className="text-xl font-bold text-gray-900">Sponza</span>
               </Link>
-            )
-          })}
-        </nav>
-
-        <div className="border-t border-green-200/60 p-4 space-y-3">
-          <Link href="/dashboard/influencer/referrals">
-            <Button
-              variant="outline"
-              className="w-full justify-start border-green-200 text-green-700 hover:bg-green-50"
-            >
-              <Gift className="mr-2 h-4 w-4" />
-              Refer & Earn
-            </Button>
-          </Link>
-          <Button
-            variant="ghost"
-            className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50"
-            onClick={handleLogout}
-          >
-            <LogOut className="mr-3 h-5 w-5" />
-            Sign Out
-          </Button>
-        </div>
-      </div>
-
-      {/* Main content */}
-      <div className="lg:pl-72">
-        {/* Header */}
-        <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-xl border-b border-green-200/60">
-          <div className="flex h-16 items-center justify-between px-6">
-            <Button variant="ghost" size="icon" className="lg:hidden" onClick={() => setSidebarOpen(true)}>
-              <Menu className="h-6 w-6" />
-            </Button>
-
-            <div className="flex items-center space-x-4">
-              <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 font-medium">
-                Creator Account
-              </Badge>
-
-              <Button variant="ghost" size="icon" className="relative">
-                <Bell className="h-5 w-5" />
-                {notifications > 0 && (
-                  <span className="absolute -top-1 -right-1 h-3 w-3 bg-red-500 rounded-full text-xs text-white flex items-center justify-center">
-                    {notifications > 9 ? "9+" : notifications}
-                  </span>
-                )}
-              </Button>
-
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="relative h-10 w-10 rounded-full">
-                    <Avatar className="h-10 w-10">
-                      <AvatarImage src={user?.profilePicture || "/placeholder.svg"} alt="Influencer" />
-                      <AvatarFallback className="bg-gradient-to-r from-green-500 to-blue-500 text-white">
-                        {user?.name?.charAt(0) || "I"}
-                      </AvatarFallback>
-                    </Avatar>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-56" align="end" forceMount>
-                  <DropdownMenuLabel className="font-normal">
-                    <div className="flex flex-col space-y-1">
-                      <p className="text-sm font-medium leading-none">{user?.name || "Creator"}</p>
-                      <p className="text-xs leading-none text-muted-foreground">{user?.email}</p>
-                    </div>
-                  </DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem asChild>
-                    <Link href="/dashboard/influencer/profile">
-                      <User className="mr-2 h-4 w-4" />
-                      Profile
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link href="/dashboard/influencer/settings">
-                      <Settings className="mr-2 h-4 w-4" />
-                      Settings
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={handleLogout}>
-                    <LogOut className="mr-2 h-4 w-4" />
-                    Log out
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
             </div>
+            <nav className="mt-8 flex-1 space-y-1 px-2">
+              {navItems.map((item) => {
+                const isActive = pathname === item.href || pathname.startsWith(item.href + "/")
+                const Icon = item.icon
+
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className={`group flex items-center px-2 py-2 text-sm font-medium rounded-md relative ${
+                      isActive ? "bg-green-100 text-green-900" : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                    }`}
+                  >
+                    <Icon className="mr-3 h-5 w-5 flex-shrink-0" />
+                    {item.label}
+                    {item.badge && (
+                      <Badge className="ml-auto bg-red-500 text-white text-xs">
+                        {item.badge > 9 ? "9+" : item.badge}
+                      </Badge>
+                    )}
+                  </Link>
+                )
+              })}
+            </nav>
           </div>
-        </header>
-
-        {/* Page content */}
-        <main className="p-6 pb-20 lg:pb-6">
-          <div className="mx-auto max-w-7xl">{children}</div>
-        </main>
-
-        {/* Mobile Bottom Navigation */}
-        <div className="fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-xl border-t border-green-200/60 lg:hidden">
-          <div className="flex items-center justify-around py-2">
-            {mobileNavigation.map((item) => {
-              const isActive = pathname === item.href || pathname.startsWith(item.href + "/")
-              return (
-                <Link
-                  key={item.name}
-                  href={item.href}
-                  className={cn(
-                    "flex flex-col items-center justify-center px-3 py-2 text-xs font-medium rounded-lg transition-all duration-200",
-                    isActive ? "text-green-600 bg-green-50" : "text-slate-600 hover:text-slate-900 hover:bg-slate-100",
-                  )}
-                >
-                  <item.icon className={cn("h-5 w-5 mb-1", isActive ? "text-green-600" : "text-slate-400")} />
-                  {item.name}
-                </Link>
-              )
-            })}
+          <div className="flex flex-shrink-0 border-t border-gray-200 p-4">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="w-full justify-start">
+                  <Avatar className="h-8 w-8 mr-3">
+                    <AvatarImage src="/placeholder.svg" />
+                    <AvatarFallback className="bg-gradient-to-r from-green-500 to-blue-500 text-white">
+                      U
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1 text-left">
+                    <div className="text-sm font-medium">John Doe</div>
+                    <div className="text-xs text-gray-500">Influencer</div>
+                  </div>
+                  <ChevronDown className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem asChild>
+                  <Link href="/dashboard/influencer/profile">
+                    <User className="mr-2 h-4 w-4" />
+                    Profile
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/dashboard/influencer/settings">
+                    <Settings className="mr-2 h-4 w-4" />
+                    Settings
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleLogout}>
+                  <LogOut className="mr-2 h-4 w-4" />
+                  Logout
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
       </div>
+
+      {/* Mobile Header */}
+      <div className="md:hidden">
+        <div className="flex items-center justify-between bg-white px-4 py-3 shadow-sm">
+          <Button variant="ghost" size="sm" onClick={() => setSidebarOpen(true)}>
+            <Menu className="h-6 w-6" />
+          </Button>
+          <Link href="/" className="flex items-center space-x-2">
+            <div className="w-8 h-8 bg-gradient-to-r from-green-500 to-blue-500 rounded-lg flex items-center justify-center">
+              <span className="text-white font-bold text-sm">S</span>
+            </div>
+            <span className="text-xl font-bold text-gray-900">Sponza</span>
+          </Link>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="sm">
+                <Avatar className="h-8 w-8">
+                  <AvatarImage src="/placeholder.svg" />
+                  <AvatarFallback className="bg-gradient-to-r from-green-500 to-blue-500 text-white">U</AvatarFallback>
+                </Avatar>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem asChild>
+                <Link href="/dashboard/influencer/profile">Profile</Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link href="/dashboard/influencer/settings">Settings</Link>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={handleLogout}>Logout</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </div>
+
+      {/* Mobile Sidebar Overlay */}
+      {sidebarOpen && (
+        <div className="fixed inset-0 z-50 md:hidden">
+          <div className="fixed inset-0 bg-black bg-opacity-50" onClick={() => setSidebarOpen(false)} />
+          <div className="fixed inset-y-0 left-0 w-64 bg-white shadow-lg">
+            <div className="flex items-center justify-between p-4 border-b">
+              <Link href="/" className="flex items-center space-x-2">
+                <div className="w-8 h-8 bg-gradient-to-r from-green-500 to-blue-500 rounded-lg flex items-center justify-center">
+                  <span className="text-white font-bold text-sm">S</span>
+                </div>
+                <span className="text-xl font-bold text-gray-900">Sponza</span>
+              </Link>
+              <Button variant="ghost" size="sm" onClick={() => setSidebarOpen(false)}>
+                <X className="h-6 w-6" />
+              </Button>
+            </div>
+            <nav className="mt-4 space-y-1 px-2">
+              {navItems.map((item) => {
+                const isActive = pathname === item.href || pathname.startsWith(item.href + "/")
+                const Icon = item.icon
+
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    onClick={() => setSidebarOpen(false)}
+                    className={`group flex items-center px-2 py-2 text-sm font-medium rounded-md ${
+                      isActive ? "bg-green-100 text-green-900" : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                    }`}
+                  >
+                    <Icon className="mr-3 h-5 w-5 flex-shrink-0" />
+                    {item.label}
+                    {item.badge && (
+                      <Badge className="ml-auto bg-red-500 text-white text-xs">
+                        {item.badge > 9 ? "9+" : item.badge}
+                      </Badge>
+                    )}
+                  </Link>
+                )
+              })}
+            </nav>
+          </div>
+        </div>
+      )}
+
+      {/* Main Content */}
+      <div className="md:pl-64 flex flex-col flex-1">
+        <main className="flex-1 p-4 md:p-8 pb-20 md:pb-8">{children}</main>
+      </div>
+
+      {/* Mobile Bottom Navigation */}
+      <MobileBottomNav
+        userRole="influencer"
+        unreadMessages={unreadMessages}
+        unreadNotifications={unreadNotifications}
+      />
     </div>
   )
 }
