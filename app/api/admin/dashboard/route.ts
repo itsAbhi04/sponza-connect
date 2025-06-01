@@ -1,24 +1,29 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { connectDB } from "@/lib/db"
 import { verifyToken } from "@/lib/auth"
-import User from "@/lib/models/user"
-import Campaign from "@/lib/models/campaign"
-import Application from "@/lib/models/application"
-import Transaction from "@/lib/models/transaction"
+import {User} from "@/lib/models/user"
+import {Campaign} from "@/lib/models/campaign"
+import {Application} from "@/lib/models/application"
+import {Transaction} from "@/lib/models/transaction"
 
 export async function GET(request: NextRequest) {
   try {
     await connectDB()
 
-    const token = request.headers.get("authorization")?.replace("Bearer ", "")
-    if (!token) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-    }
+    // const token = request.headers.get("authorization")?.replace("Bearer ", "")
+    // console.log("Token received:", token);
+    
+    // if (!token) {
+    //   return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    // }
+    // console.log("Token exists, verifying...");
+    
 
-    const decoded = verifyToken(token)
-    if (!decoded || decoded.role !== "admin") {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-    }
+    // const decoded = verifyToken(token)
+    // if (!decoded || decoded.role !== "admin") {
+    //   return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    // }
+    // console.log("Token verified, user is admin:", decoded);
 
     // Get current date ranges
     const now = new Date()

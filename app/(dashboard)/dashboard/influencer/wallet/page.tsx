@@ -10,8 +10,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Dialog, DialogContent, DialogDescription, DialogHeader, AlertDialogTitle } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogDescription, DialogHeader } from "@/components/ui/dialog"
 import { useToast } from "@/components/ui/use-toast"
+import { AlertDialogTitle } from "@/components/ui/alert-dialog"
 
 export default function WalletPage() {
   const [withdrawalAmount, setWithdrawalAmount] = useState("")
