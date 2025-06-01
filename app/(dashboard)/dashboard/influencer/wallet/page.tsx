@@ -1,5 +1,7 @@
 "use client"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { DialogTrigger } from "@/components/ui/dialog"
+
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { ArrowUpRight, Wallet, CreditCard, Building2, History, TrendingUp, ShieldCheck } from "lucide-react"
@@ -8,14 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, AlertDialogTitle } from "@/components/ui/dialog"
 import { useToast } from "@/components/ui/use-toast"
 
 export default function WalletPage() {
@@ -183,7 +178,7 @@ export default function WalletPage() {
                     </DialogTrigger>
                     <DialogContent className="sm:max-w-[425px]">
                       <DialogHeader>
-                        <DialogTitle>Withdraw Funds</DialogTitle>
+                        <AlertDialogTitle>Withdraw Funds</AlertDialogTitle>
                         <DialogDescription>Enter the amount to withdraw and select a payment method.</DialogDescription>
                       </DialogHeader>
                       <div className="grid gap-4 py-4">

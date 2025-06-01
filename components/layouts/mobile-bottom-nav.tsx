@@ -2,7 +2,7 @@
 
 import { usePathname } from "next/navigation"
 import Link from "next/link"
-import { BarChart3, Target, DollarSign, MessageSquare, Settings, User } from "lucide-react"
+import { BarChart3, Target, DollarSign, MessageSquare, Settings, User, FileText, Wallet, Bell } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 
 interface MobileBottomNavProps {
@@ -25,9 +25,27 @@ export function MobileBottomNav({ userRole, unreadMessages = 0, unreadNotificati
             badge: null,
           },
           {
+            href: "/dashboard/influencer/analytics",
+            icon: BarChart3,
+            label: "Analytics",
+            badge: null,
+          },
+          {
+            href: "/dashboard/influencer/applications",
+            icon: FileText,
+            label: "Applications",
+            badge: null,
+          },
+          {
             href: "/dashboard/influencer/campaigns",
             icon: Target,
             label: "Campaigns",
+            badge: null,
+          },
+          {
+            href: "/dashboard/influencer/earnings",
+            icon: DollarSign,
+            label: "Earnings",
             badge: null,
           },
           {
@@ -37,15 +55,33 @@ export function MobileBottomNav({ userRole, unreadMessages = 0, unreadNotificati
             badge: unreadMessages > 0 ? unreadMessages : null,
           },
           {
-            href: "/dashboard/influencer/earnings",
-            icon: DollarSign,
-            label: "Earnings",
+            href: "/dashboard/influencer/notifications",
+            icon: Bell,
+            label: "Notifications",
+            badge: unreadNotifications > 0 ? unreadNotifications : null,
+          },
+          {
+            href: "/dashboard/influencer/preferences",
+            icon: Settings,
+            label: "Preferences",
             badge: null,
           },
           {
             href: "/dashboard/influencer/profile",
             icon: User,
             label: "Profile",
+            badge: null,
+          },
+          {
+            href: "/dashboard/influencer/settings",
+            icon: Settings,
+            label: "Settings",
+            badge: null,
+          },
+          {
+            href: "/dashboard/influencer/wallet",
+            icon: Wallet,
+            label: "Wallet",
             badge: null,
           },
         ]
