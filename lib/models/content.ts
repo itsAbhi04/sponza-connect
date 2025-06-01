@@ -4,20 +4,21 @@ export interface IContent extends Document {
   campaignId: mongoose.Types.ObjectId
   influencerId: mongoose.Types.ObjectId
   brandId: mongoose.Types.ObjectId
-  type: "post" | "story" | "reel" | "video" | "blog" | "review"
+  contentType: "post" | "story" | "reel" | "video" | "blog" | "other"
   platform: string
   title: string
   description: string
   mediaUrls: string[]
   postUrl?: string
-  status: "draft" | "submitted" | "approved" | "rejected" | "published"
   metrics: {
     views?: number
     likes?: number
     comments?: number
     shares?: number
+    saves?: number
     engagementRate?: number
   }
+  status: "draft" | "submitted" | "approved" | "rejected" | "published"
   submittedAt?: Date
   approvedAt?: Date
   publishedAt?: Date
@@ -26,7 +27,7 @@ export interface IContent extends Document {
   updatedAt: Date
 }
 
-const ContentSchema = new Schema<IContent>(
+const contentSchema = new Schema<IContent>(
   {
     campaignId: {
       type: Schema.Types.ObjectId,
@@ -43,9 +44,9 @@ const ContentSchema = new Schema<IContent>(
       ref: "User",
       required: true,
     },
-    type: {
+    contentType: {
       type: String,
-      enum: ["post", "story", "reel", "video", "blog", "review"],
+      enum: ["post", "story", "reel", "video", "blog", "other"],
       required: true,
     },
     platform: {
@@ -59,6 +60,7 @@ const ContentSchema = new Schema<IContent>(
     },
     description: {
       type: String,
+      required: true,
       maxlength: 2000,
     },
     mediaUrls: [
@@ -69,17 +71,18 @@ const ContentSchema = new Schema<IContent>(
     postUrl: {
       type: String,
     },
-    status: {
-      type: String,
-      enum: ["draft", "submitted", "approved", "rejected", "published"],
-      default: "draft",
-    },
     metrics: {
       views: { type: Number, default: 0 },
       likes: { type: Number, default: 0 },
       comments: { type: Number, default: 0 },
       shares: { type: Number, default: 0 },
+      saves: { type: Number, default: 0 },
       engagementRate: { type: Number, default: 0 },
+    },
+    status: {
+      type: String,
+      enum: ["draft", "submitted", "approved", "rejected", "published"],
+      default: "draft",
     },
     submittedAt: {
       type: Date,
@@ -100,8 +103,8 @@ const ContentSchema = new Schema<IContent>(
   },
 )
 
-ContentSchema.index({ campaignId: 1, status: 1 })
-ContentSchema.index({ influencerId: 1, status: 1 })
-ContentSchema.index({ brandId: 1, status: 1 })
+contentSchema.index({ campaignId: 1, status: 1 })
+contentSchema.index({ influencerId: 1, status: 1 })
+contentSchema.index({ brandId: 1, status: 1 })
 
-export default mongoose.models.Content || mongoose.model<IContent>("Content", ContentSchema)
+export default mongoose.models.Content || mongoose.model<IContent>("Content", contentSchema)
