@@ -26,6 +26,7 @@ import {
   BarChart3,
   Wallet,
   TrendingDown,
+  LogOut,
 } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
@@ -624,4 +625,19 @@ export default function InfluencerDashboard() {
                   <Button>
                     <Wallet className="h-4 w-4 mr-2" />
                     View Wallet
-                  \
+                  </Button>
+                </Link>
+              </div>
+            </CardContent>
+          </Card> 
+        </TabsContent>        
+      </Tabs>
+      <div className="flex justify-end">
+        <Button variant="outline" onClick={handleLogout} className="mt-4">  
+          <LogOut className="h-4 w-4 mr-2" />
+          Logout
+        </Button>
+      </div>
+    </div>
+  )
+}
