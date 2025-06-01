@@ -12,7 +12,7 @@ export interface IReview extends Document {
   updatedAt: Date
 }
 
-const ReviewSchema = new Schema<IReview>(
+const reviewSchema = new Schema<IReview>(
   {
     reviewerId: {
       type: Schema.Types.ObjectId,
@@ -55,7 +55,7 @@ const ReviewSchema = new Schema<IReview>(
   },
 )
 
-ReviewSchema.index({ revieweeId: 1, reviewType: 1 })
-ReviewSchema.index({ campaignId: 1 })
+reviewSchema.index({ revieweeId: 1, rating: -1 })
+reviewSchema.index({ campaignId: 1 })
 
-export default mongoose.models.Review || mongoose.model<IReview>("Review", ReviewSchema)
+export default mongoose.models.Review || mongoose.model<IReview>("Review", reviewSchema)

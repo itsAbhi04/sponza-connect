@@ -2,7 +2,7 @@ import { type NextRequest, NextResponse } from "next/server"
 import { connectDB } from "@/lib/db"
 import { verifyToken } from "@/lib/auth"
 import Application from "@/lib/models/application"
-import Notification from "@/lib/models/notification"
+import Campaign from "@/lib/models/campaign"
 import Collaboration from "@/lib/models/collaboration"
 
 export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
@@ -19,72 +19,58 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const { message, customTerms } = await request.json()
-
-    const application = await Application.findById(params.id).populate("campaignId").populate("influencerId")
+    const application = await Application.findById(params.id).populate("campaignId")
 
     if (!application) {
       return NextResponse.json({ error: "Application not found" }, { status: 404 })
     }
 
     // Verify the campaign belongs to the brand
-    if (application.campaignId.brandId.toString() !== decoded.userId) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 403 })
-    }
+    const campaign = await Campaign.findOne({
+      _id: application.campaignId,
+      brandId: decoded.userId,
+    })
 
-    if (application.status !== "applied") {
-      return NextResponse.json({ error: "Application cannot be accepted" }, { status: 400 })
+    if (!campaign) {
+      return NextResponse.json({ error: "Campaign not found" }, { status: 404 })
     }
 
     // Update application status
     application.status = "accepted"
-    application.acceptedAt = new Date()
-    if (message) application.brandMessage = message
+    application.respondedAt = new Date()
     await application.save()
 
     // Create collaboration
     const collaboration = new Collaboration({
-      campaignId: application.campaignId._id,
+      campaignId: application.campaignId,
       brandId: decoded.userId,
-      influencerId: application.influencerId._id,
-      status: "active",
+      influencerId: application.influencerId,
+      applicationId: application._id,
       terms: {
-        budget: application.proposedBudget || application.campaignId.budget,
-        deliverables: application.campaignId.deliverables,
-        timeline: application.campaignId.timeline,
-        paymentTerms: customTerms || "Payment upon completion",
+        deliverables: campaign.deliverables.map((d) => ({
+          type: d.type,
+          quantity: d.quantity,
+          deadline: campaign.timeline.endDate,
+          completed: false,
+        })),
+        payment: {
+          amount: application.pricing,
+          currency: "INR",
+          schedule: "completion",
+        },
+        timeline: {
+          startDate: campaign.timeline.startDate,
+          endDate: campaign.timeline.endDate,
+        },
       },
       progress: {
-        contentSubmitted: 0,
-        contentApproved: 0,
-        totalDeliverables: application.campaignId.deliverables.reduce((sum, d) => sum + d.quantity, 0),
-        completionPercentage: 0,
+        completedDeliverables: 0,
+        totalDeliverables: campaign.deliverables.length,
+        percentageComplete: 0,
       },
-      payments: [
-        {
-          amount: application.proposedBudget || application.campaignId.budget,
-          status: "pending",
-          dueDate: application.campaignId.timeline.endDate,
-        },
-      ],
     })
 
     await collaboration.save()
-
-    // Create notification for influencer
-    const notification = new Notification({
-      userId: application.influencerId._id,
-      type: "application_accepted",
-      title: "Application Accepted!",
-      message: `Your application for "${application.campaignId.title}" has been accepted.`,
-      data: {
-        applicationId: application._id,
-        campaignId: application.campaignId._id,
-        collaborationId: collaboration._id,
-      },
-    })
-
-    await notification.save()
 
     return NextResponse.json({
       message: "Application accepted successfully",
@@ -92,7 +78,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
       collaboration,
     })
   } catch (error) {
-    console.error("Accept application error:", error)
+    console.error("Error accepting application:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }

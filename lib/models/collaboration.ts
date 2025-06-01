@@ -4,45 +4,47 @@ export interface ICollaboration extends Document {
   campaignId: mongoose.Types.ObjectId
   brandId: mongoose.Types.ObjectId
   influencerId: mongoose.Types.ObjectId
-  status: "pending" | "active" | "completed" | "cancelled"
+  applicationId: mongoose.Types.ObjectId
+  status: "active" | "completed" | "cancelled" | "disputed"
   terms: {
-    budget: number
     deliverables: Array<{
       type: string
-      description: string
       quantity: number
-      platform: string
+      deadline: Date
+      completed: boolean
     }>
+    payment: {
+      amount: number
+      currency: string
+      schedule: "upfront" | "milestone" | "completion"
+      milestones?: Array<{
+        description: string
+        amount: number
+        dueDate: Date
+        completed: boolean
+      }>
+    }
     timeline: {
       startDate: Date
       endDate: Date
     }
-    paymentTerms: string
   }
   progress: {
-    contentSubmitted: number
-    contentApproved: number
+    completedDeliverables: number
     totalDeliverables: number
-    completionPercentage: number
+    percentageComplete: number
   }
-  payments: Array<{
-    amount: number
-    status: "pending" | "completed" | "failed"
-    dueDate: Date
-    paidAt?: Date
-    paymentId?: string
-  }>
   communications: Array<{
-    from: mongoose.Types.ObjectId
+    senderId: mongoose.Types.ObjectId
     message: string
     timestamp: Date
-    type: "message" | "revision_request" | "approval" | "rejection"
+    type: "message" | "milestone" | "deliverable" | "payment"
   }>
   createdAt: Date
   updatedAt: Date
 }
 
-const CollaborationSchema = new Schema<ICollaboration>(
+const collaborationSchema = new Schema<ICollaboration>(
   {
     campaignId: {
       type: Schema.Types.ObjectId,
@@ -59,112 +61,60 @@ const CollaborationSchema = new Schema<ICollaboration>(
       ref: "User",
       required: true,
     },
+    applicationId: {
+      type: Schema.Types.ObjectId,
+      ref: "Application",
+      required: true,
+    },
     status: {
       type: String,
-      enum: ["pending", "active", "completed", "cancelled"],
-      default: "pending",
+      enum: ["active", "completed", "cancelled", "disputed"],
+      default: "active",
     },
     terms: {
-      budget: {
-        type: Number,
-        required: true,
-        min: 0,
-      },
       deliverables: [
         {
-          type: {
-            type: String,
-            required: true,
-          },
-          description: {
-            type: String,
-            required: true,
-          },
-          quantity: {
-            type: Number,
-            required: true,
-            min: 1,
-          },
-          platform: {
-            type: String,
-            required: true,
-          },
+          type: { type: String, required: true },
+          quantity: { type: Number, required: true },
+          deadline: { type: Date, required: true },
+          completed: { type: Boolean, default: false },
         },
       ],
-      timeline: {
-        startDate: {
-          type: Date,
-          required: true,
+      payment: {
+        amount: { type: Number, required: true },
+        currency: { type: String, default: "INR" },
+        schedule: {
+          type: String,
+          enum: ["upfront", "milestone", "completion"],
+          default: "completion",
         },
-        endDate: {
-          type: Date,
-          required: true,
-        },
+        milestones: [
+          {
+            description: String,
+            amount: Number,
+            dueDate: Date,
+            completed: { type: Boolean, default: false },
+          },
+        ],
       },
-      paymentTerms: {
-        type: String,
-        required: true,
+      timeline: {
+        startDate: { type: Date, required: true },
+        endDate: { type: Date, required: true },
       },
     },
     progress: {
-      contentSubmitted: {
-        type: Number,
-        default: 0,
-      },
-      contentApproved: {
-        type: Number,
-        default: 0,
-      },
-      totalDeliverables: {
-        type: Number,
-        default: 0,
-      },
-      completionPercentage: {
-        type: Number,
-        default: 0,
-      },
+      completedDeliverables: { type: Number, default: 0 },
+      totalDeliverables: { type: Number, default: 0 },
+      percentageComplete: { type: Number, default: 0 },
     },
-    payments: [
-      {
-        amount: {
-          type: Number,
-          required: true,
-        },
-        status: {
-          type: String,
-          enum: ["pending", "completed", "failed"],
-          default: "pending",
-        },
-        dueDate: {
-          type: Date,
-          required: true,
-        },
-        paidAt: {
-          type: Date,
-        },
-        paymentId: {
-          type: String,
-        },
-      },
-    ],
     communications: [
       {
-        from: {
-          type: Schema.Types.ObjectId,
-          ref: "User",
-          required: true,
-        },
-        message: {
-          type: String,
-          required: true,
-        },
-        timestamp: {
-          type: Date,
-          default: Date.now,
-        },
+        senderId: { type: Schema.Types.ObjectId, ref: "User", required: true },
+        message: { type: String, required: true },
+        timestamp: { type: Date, default: Date.now },
         type: {
           type: String,
-          enum: ["message", "revision_request", "approval", "rejection"],
+          enum: ["message", "milestone", "deliverable", "payment"],
           default: "message",
         },
       },
@@ -175,8 +125,8 @@ const CollaborationSchema = new Schema<ICollaboration>(
   },
 )
 
-CollaborationSchema.index({ campaignId: 1 })
-CollaborationSchema.index({ brandId: 1, status: 1 })
-CollaborationSchema.index({ influencerId: 1, status: 1 })
+collaborationSchema.index({ campaignId: 1, status: 1 })
+collaborationSchema.index({ brandId: 1, status: 1 })
+collaborationSchema.index({ influencerId: 1, status: 1 })
 
-export default mongoose.models.Collaboration || mongoose.model<ICollaboration>("Collaboration", CollaborationSchema)
+export default mongoose.models.Collaboration || mongoose.model<ICollaboration>("Collaboration", collaborationSchema)

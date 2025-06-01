@@ -24,16 +24,14 @@ export async function GET(request: NextRequest) {
     const status = searchParams.get("status")
     const campaignId = searchParams.get("campaignId")
 
-    // Get brand's campaigns
+    // Get brand's campaigns first
     const brandCampaigns = await Campaign.find({ brandId: decoded.userId }).select("_id")
     const campaignIds = brandCampaigns.map((c) => c._id)
 
     const query: any = { campaignId: { $in: campaignIds } }
-
     if (status && status !== "all") {
       query.status = status
     }
-
     if (campaignId) {
       query.campaignId = campaignId
     }

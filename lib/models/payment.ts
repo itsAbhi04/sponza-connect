@@ -1,32 +1,23 @@
 import mongoose, { Schema, type Document } from "mongoose"
 
 export interface IPayment extends Document {
-  paymentId: string
-  orderId: string
   userId: mongoose.Types.ObjectId
-  campaignId?: mongoose.Types.ObjectId
+  campaignId: mongoose.Types.ObjectId
+  influencerId?: mongoose.Types.ObjectId
   amount: number
   currency: string
-  status: "pending" | "completed" | "failed" | "refunded"
-  paymentMethod: "razorpay" | "stripe" | "paypal" | "bank_transfer"
-  gatewayResponse: any
+  paymentMethod: string
+  paymentGateway: string
+  transactionId: string
+  status: "pending" | "processing" | "completed" | "failed" | "refunded"
   description: string
-  metadata: any
+  metadata: Record<string, any>
   createdAt: Date
   updatedAt: Date
 }
 
-const PaymentSchema = new Schema<IPayment>(
+const paymentSchema = new Schema<IPayment>(
   {
-    paymentId: {
-      type: String,
-      required: true,
-      unique: true,
-    },
-    orderId: {
-      type: String,
-      required: true,
-    },
     userId: {
       type: Schema.Types.ObjectId,
       ref: "User",
@@ -35,6 +26,11 @@ const PaymentSchema = new Schema<IPayment>(
     campaignId: {
       type: Schema.Types.ObjectId,
       ref: "Campaign",
+      required: true,
+    },
+    influencerId: {
+      type: Schema.Types.ObjectId,
+      ref: "User",
     },
     amount: {
       type: Number,
@@ -43,20 +39,27 @@ const PaymentSchema = new Schema<IPayment>(
     },
     currency: {
       type: String,
+      required: true,
       default: "INR",
-    },
-    status: {
-      type: String,
-      enum: ["pending", "completed", "failed", "refunded"],
-      default: "pending",
     },
     paymentMethod: {
       type: String,
-      enum: ["razorpay", "stripe", "paypal", "bank_transfer"],
+      required: true,
+    },
+    paymentGateway: {
+      type: String,
+      required: true,
       default: "razorpay",
     },
-    gatewayResponse: {
-      type: Schema.Types.Mixed,
+    transactionId: {
+      type: String,
+      required: true,
+      unique: true,
+    },
+    status: {
+      type: String,
+      enum: ["pending", "processing", "completed", "failed", "refunded"],
+      default: "pending",
     },
     description: {
       type: String,
@@ -64,6 +67,7 @@ const PaymentSchema = new Schema<IPayment>(
     },
     metadata: {
       type: Schema.Types.Mixed,
+      default: {},
     },
   },
   {
@@ -71,8 +75,8 @@ const PaymentSchema = new Schema<IPayment>(
   },
 )
 
-PaymentSchema.index({ userId: 1, status: 1 })
-PaymentSchema.index({ campaignId: 1 })
-PaymentSchema.index({ paymentId: 1 })
+paymentSchema.index({ userId: 1, status: 1 })
+paymentSchema.index({ campaignId: 1 })
+paymentSchema.index({ transactionId: 1 })
 
-export default mongoose.models.Payment || mongoose.model<IPayment>("Payment", PaymentSchema)
+export default mongoose.models.Payment || mongoose.model<IPayment>("Payment", paymentSchema)

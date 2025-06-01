@@ -2,52 +2,47 @@ import { type NextRequest, NextResponse } from "next/server"
 import { connectDB } from "@/lib/db"
 import { verifyToken } from "@/lib/auth"
 import Campaign from "@/lib/models/campaign"
-import Application from "@/lib/models/application"
 import { z } from "zod"
 
 const createCampaignSchema = z.object({
   title: z.string().min(1).max(200),
   description: z.string().min(1).max(2000),
-  targetPlatforms: z.array(z.enum(["Instagram", "YouTube", "TikTok", "Twitter", "LinkedIn", "Facebook"])),
+  category: z.string(),
+  targetPlatforms: z.array(z.string()),
   budget: z.number().min(0),
+  timeline: z.object({
+    startDate: z.string(),
+    endDate: z.string(),
+  }),
   deliverables: z.array(
     z.object({
-      type: z.enum(["Post", "Story", "Reel", "Video", "Blog", "Review"]),
-      description: z.string().max(500),
+      type: z.string(),
       quantity: z.number().min(1),
-      platform: z.enum(["Instagram", "YouTube", "TikTok", "Twitter", "LinkedIn", "Facebook", "Blog"]),
+      budget: z.number().min(0),
+      description: z.string().optional(),
     }),
   ),
-  timeline: z.object({
-    startDate: z.string().transform((str) => new Date(str)),
-    endDate: z.string().transform((str) => new Date(str)),
-  }),
-  requirements: z.array(z.string()).optional(),
   targetAudience: z
     .object({
-      ageRange: z.enum(["18-24", "25-34", "35-44", "45-54", "55+", "All Ages"]).optional(),
-      gender: z.enum(["Male", "Female", "All", "Non-binary"]).optional(),
+      ageRange: z
+        .object({
+          min: z.number().optional(),
+          max: z.number().optional(),
+        })
+        .optional(),
+      gender: z.string().optional(),
       location: z.array(z.string()).optional(),
       interests: z.array(z.string()).optional(),
     })
     .optional(),
-  category: z.enum([
-    "Fashion",
-    "Beauty",
-    "Technology",
-    "Lifestyle",
-    "Food & Beverage",
-    "Travel",
-    "Fitness",
-    "Gaming",
-    "Education",
-    "Finance",
-    "Healthcare",
-    "Automotive",
-    "Real Estate",
-    "Entertainment",
-    "Other",
-  ]),
+  requirements: z
+    .object({
+      minFollowers: z.number().optional(),
+      minEngagementRate: z.number().optional(),
+      contentGuidelines: z.string().optional(),
+      hashtags: z.array(z.string()).optional(),
+    })
+    .optional(),
 })
 
 export async function GET(request: NextRequest) {
@@ -68,45 +63,22 @@ export async function GET(request: NextRequest) {
     const page = Number.parseInt(searchParams.get("page") || "1")
     const limit = Number.parseInt(searchParams.get("limit") || "10")
     const status = searchParams.get("status")
-    const search = searchParams.get("search")
 
     const query: any = { brandId: decoded.userId }
-
     if (status && status !== "all") {
       query.status = status
-    }
-
-    if (search) {
-      query.$or = [{ title: { $regex: search, $options: "i" } }, { description: { $regex: search, $options: "i" } }]
     }
 
     const campaigns = await Campaign.find(query)
       .sort({ createdAt: -1 })
       .limit(limit)
       .skip((page - 1) * limit)
-      .lean()
-
-    // Get application counts for each campaign
-    const campaignIds = campaigns.map((c) => c._id)
-    const applicationCounts = await Application.aggregate([
-      { $match: { campaignId: { $in: campaignIds } } },
-      { $group: { _id: "$campaignId", count: { $sum: 1 } } },
-    ])
-
-    const applicationCountMap = applicationCounts.reduce((acc, item) => {
-      acc[item._id.toString()] = item.count
-      return acc
-    }, {})
-
-    const campaignsWithCounts = campaigns.map((campaign) => ({
-      ...campaign,
-      applicationCount: applicationCountMap[campaign._id.toString()] || 0,
-    }))
+      .populate("brandId", "name email")
 
     const total = await Campaign.countDocuments(query)
 
     return NextResponse.json({
-      campaigns: campaignsWithCounts,
+      campaigns,
       pagination: {
         page,
         limit,
@@ -140,6 +112,10 @@ export async function POST(request: NextRequest) {
     const campaign = new Campaign({
       ...validatedData,
       brandId: decoded.userId,
+      timeline: {
+        startDate: new Date(validatedData.timeline.startDate),
+        endDate: new Date(validatedData.timeline.endDate),
+      },
       status: "draft",
     })
 
