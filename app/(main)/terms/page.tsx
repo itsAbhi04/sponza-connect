@@ -1,33 +1,7 @@
-import Link from "next/link"
 
 export default function TermsPage() {
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="border-b bg-white">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <Link href="/" className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-gradient-to-r from-purple-600 to-blue-600 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-lg">S</span>
-            </div>
-            <span className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
-              Sponza
-            </span>
-          </Link>
-          <nav className="hidden md:flex items-center space-x-8">
-            <Link href="/" className="text-gray-600 hover:text-purple-600 transition-colors">
-              Home
-            </Link>
-            <Link href="/about" className="text-gray-600 hover:text-purple-600 transition-colors">
-              About
-            </Link>
-            <Link href="/auth/login" className="text-gray-600 hover:text-purple-600 transition-colors">
-              Sign In
-            </Link>
-          </nav>
-        </div>
-      </header>
-
       <div className="container mx-auto px-4 py-16 max-w-4xl">
         <div className="bg-white rounded-lg shadow-sm p-8">
           <h1 className="text-4xl font-bold mb-8 text-center">Terms of Service</h1>
