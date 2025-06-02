@@ -5,6 +5,7 @@ import { Subscription } from "@/lib/models/subscription"
 import { Notification } from "@/lib/models/notification"
 import { connectDB } from "@/lib/db"
 import { validateWebhookSignature } from "@/lib/razorpay"
+import { subscriptionConfirmationEmail, paymentConfirmationEmail } from "@/email/template"
 
 export async function POST(request: NextRequest) {
   try {
@@ -20,6 +21,8 @@ export async function POST(request: NextRequest) {
     const event = JSON.parse(body)
     const { event: eventType, payload } = event
 
+    console.log(`Processing Razorpay webhook: ${eventType}`)
+
     switch (eventType) {
       case "payment.captured":
         await handlePaymentCaptured(payload.payment.entity)
@@ -32,6 +35,12 @@ export async function POST(request: NextRequest) {
         break
       case "subscription.cancelled":
         await handleSubscriptionCancelled(payload.subscription.entity)
+        break
+      case "subscription.activated":
+        await handleSubscriptionActivated(payload.subscription.entity)
+        break
+      case "subscription.completed":
+        await handleSubscriptionCompleted(payload.subscription.entity)
         break
       default:
         console.log(`Unhandled webhook event: ${eventType}`)
@@ -47,35 +56,47 @@ export async function POST(request: NextRequest) {
 async function handlePaymentCaptured(payment: any) {
   const transaction = await Transaction.findOne({
     "razorpayDetails.orderId": payment.order_id,
-  })
+  }).populate("userId", "name email")
 
   if (transaction) {
     transaction.status = "completed"
     transaction.razorpayDetails.paymentId = payment.id
     await transaction.save()
 
-    // Update wallet balance
-    const wallet = await Wallet.findOne({ userId: transaction.userId })
-    if (wallet && transaction.type === "campaign_payment") {
-      wallet.balance += transaction.amount
-      wallet.transactions.push(transaction._id)
-      await wallet.save()
-    }
+    // Update wallet balance for wallet top-ups
+    if (transaction.type === "wallet_topup") {
+      const wallet = await Wallet.findOne({ userId: transaction.userId })
+      if (wallet) {
+        wallet.balance += Math.abs(transaction.amount)
+        wallet.transactions.push(transaction._id)
+        await wallet.save()
 
-    // Send notification
-    const notification = new Notification({
-      userId: transaction.userId,
-      message: `Payment of ₹${transaction.amount} has been processed successfully`,
-      type: "payment",
-    })
-    await notification.save()
+        // Send notification
+        const notification = new Notification({
+          userId: transaction.userId,
+          message: `Payment of ₹${Math.abs(transaction.amount)} has been added to your wallet`,
+          type: "payment",
+        })
+        await notification.save()
+
+        // Send email confirmation
+        if (transaction.userId.email) {
+          await paymentConfirmationEmail(
+            transaction.userId.name,
+            transaction.userId.email,
+            "Wallet Top-up",
+            `₹${Math.abs(transaction.amount)}`,
+          )
+        }
+      }
+    }
   }
 }
 
 async function handlePaymentFailed(payment: any) {
   const transaction = await Transaction.findOne({
     "razorpayDetails.orderId": payment.order_id,
-  })
+  }).populate("userId", "name email")
 
   if (transaction) {
     transaction.status = "failed"
@@ -84,8 +105,8 @@ async function handlePaymentFailed(payment: any) {
 
     // Send notification
     const notification = new Notification({
-      userId: transaction.userId,
-      message: `Payment of ₹${transaction.amount} failed. Please try again.`,
+      userId: transaction.userId._id,
+      message: `Payment of ₹${Math.abs(transaction.amount)} failed. Please try again.`,
       type: "payment",
     })
     await notification.save()
@@ -95,14 +116,14 @@ async function handlePaymentFailed(payment: any) {
 async function handleSubscriptionCharged(subscription: any, payment: any) {
   const userSubscription = await Subscription.findOne({
     razorpaySubscriptionId: subscription.id,
-  })
+  }).populate("userId", "name email")
 
   if (userSubscription) {
     // Create transaction record
     const transaction = new Transaction({
-      userId: userSubscription.userId,
+      userId: userSubscription.userId._id,
       type: "subscription",
-      amount: payment.amount / 100, // Convert from paise to rupees
+      amount: -payment.amount / 100, // Convert from paise to rupees
       status: "completed",
       razorpayDetails: {
         subscriptionId: subscription.id,
@@ -128,27 +149,93 @@ async function handleSubscriptionCharged(subscription: any, payment: any) {
 
     // Send notification
     const notification = new Notification({
-      userId: userSubscription.userId,
+      userId: userSubscription.userId._id,
       message: `Your ${userSubscription.planType} subscription has been renewed successfully`,
       type: "payment",
     })
     await notification.save()
+
+    // Send email confirmation
+    if (userSubscription.userId.email) {
+      await subscriptionConfirmationEmail(
+        userSubscription.userId.name,
+        userSubscription.userId.email,
+        userSubscription.planType === "premium_monthly" ? "Premium Monthly" : "Premium Annual",
+      )
+    }
   }
 }
 
 async function handleSubscriptionCancelled(subscription: any) {
   const userSubscription = await Subscription.findOne({
     razorpaySubscriptionId: subscription.id,
-  })
+  }).populate("userId", "name email")
 
   if (userSubscription) {
     userSubscription.status = "cancelled"
     await userSubscription.save()
 
+    // Create a free subscription that will activate when the current one expires
+    const freeSubscription = new Subscription({
+      userId: userSubscription.userId._id,
+      planType: "free",
+      status: "pending",
+      startDate: userSubscription.endDate || new Date(),
+    })
+    await freeSubscription.save()
+
     // Send notification
     const notification = new Notification({
-      userId: userSubscription.userId,
-      message: "Your subscription has been cancelled",
+      userId: userSubscription.userId._id,
+      message:
+        "Your subscription has been cancelled. You will be moved to the free plan when your current subscription expires.",
+      type: "payment",
+    })
+    await notification.save()
+  }
+}
+
+async function handleSubscriptionActivated(subscription: any) {
+  const userSubscription = await Subscription.findOne({
+    razorpaySubscriptionId: subscription.id,
+  }).populate("userId", "name email")
+
+  if (userSubscription) {
+    userSubscription.status = "active"
+    await userSubscription.save()
+
+    // Send notification
+    const notification = new Notification({
+      userId: userSubscription.userId._id,
+      message: `Your ${userSubscription.planType} subscription has been activated successfully`,
+      type: "payment",
+    })
+    await notification.save()
+  }
+}
+
+async function handleSubscriptionCompleted(subscription: any) {
+  const userSubscription = await Subscription.findOne({
+    razorpaySubscriptionId: subscription.id,
+  }).populate("userId", "name email")
+
+  if (userSubscription) {
+    userSubscription.status = "expired"
+    await userSubscription.save()
+
+    // Create a free subscription
+    const freeSubscription = new Subscription({
+      userId: userSubscription.userId._id,
+      planType: "free",
+      status: "active",
+      startDate: new Date(),
+    })
+    await freeSubscription.save()
+
+    // Send notification
+    const notification = new Notification({
+      userId: userSubscription.userId._id,
+      message: "Your subscription has expired. You've been moved to the free plan.",
       type: "payment",
     })
     await notification.save()

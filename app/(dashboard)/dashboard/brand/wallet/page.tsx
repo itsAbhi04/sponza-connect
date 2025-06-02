@@ -1,305 +1,376 @@
 "use client"
 
-import { DialogTrigger } from "@/components/ui/dialog"
-
 import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { ArrowUpRight, CreditCard, Building2, History, TrendingUp, ShieldCheck } from "lucide-react"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Dialog, DialogContent, DialogDescription, DialogHeader, AlertDialogTitle } from "@/components/ui/dialog"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"
 import { useToast } from "@/components/ui/use-toast"
-import { useRouter } from "next/navigation"
+import { RazorpayCheckout } from "@/components/payments/razorpay-checkout"
+import {
+  Wallet,
+  TrendingUp,
+  Users,
+  ArrowUpRight,
+  ArrowDownRight,
+  Clock,
+  CheckCircle,
+  AlertCircle,
+  Plus,
+} from "lucide-react"
 
-interface Transaction {
-  id: number
-  type: string
-  description: string
-  date: string
-  amount: number
-  platform: string
+interface WalletData {
+  balance: number
+  totalSpent: number
+  activeCampaigns: number
+  pendingPayments: number
+  transactions: Transaction[]
 }
 
-export default function WalletPage() {
-  const [transactions, setTransactions] = useState<Transaction[]>([])
-  const [withdrawalAmount, setWithdrawalAmount] = useState("")
-  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState("")
+interface Transaction {
+  _id: string
+  type: string
+  amount: number
+  status: string
+  description: string
+  createdAt: string
+}
+
+export default function BrandWalletPage() {
+  const [walletData, setWalletData] = useState<WalletData | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [addFundsAmount, setAddFundsAmount] = useState("")
+  const [paymentOrder, setPaymentOrder] = useState<any>(null)
   const { toast } = useToast()
-  const router = useRouter()
 
   useEffect(() => {
-    fetchTransactions()
+    fetchWalletData()
   }, [])
 
-  const fetchTransactions = async () => {
+  const fetchWalletData = async () => {
     try {
-      const response = await fetch("/api/wallet/route")
+      setLoading(true)
+      const response = await fetch("/api/brand/wallet")
       if (response.ok) {
         const data = await response.json()
-        setTransactions(data.transactions || [])
+        setWalletData(data)
       }
     } catch (error) {
-      console.error("Error fetching transactions:", error)
+      console.error("Failed to fetch wallet data:", error)
+      toast({
+        title: "Error",
+        description: "Failed to fetch wallet data",
+        variant: "destructive",
+      })
+    } finally {
+      setLoading(false)
     }
   }
 
-  const handleWithdrawalRequest = async () => {
-    if (!withdrawalAmount || !selectedPaymentMethod) {
+  const initiateAddFunds = async () => {
+    const amount = Number.parseFloat(addFundsAmount)
+    if (!amount || amount < 100) {
       toast({
         title: "Error",
-        description: "Please enter withdrawal amount and select payment method.",
+        description: "Please enter a valid amount (minimum ₹100)",
         variant: "destructive",
       })
       return
     }
 
     try {
-      const response = await fetch("/api/wallet/withdraw", {
+      const response = await fetch("/api/brand/wallet/add-funds", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          amount: Number.parseFloat(withdrawalAmount),
-          methodId: selectedPaymentMethod,
-        }),
+        body: JSON.stringify({ amount }),
       })
 
       if (response.ok) {
-        toast({
-          title: "Withdrawal Request Sent",
-          description: `Withdrawal request of $${withdrawalAmount} sent via ${selectedPaymentMethod}.`,
-        })
-        setWithdrawalAmount("")
-        setSelectedPaymentMethod("")
-        router.refresh()
+        const order = await response.json()
+        setPaymentOrder(order)
       } else {
+        const error = await response.json()
         toast({
           title: "Error",
-          description: "Failed to send withdrawal request.",
+          description: error.message || "Failed to initiate payment",
           variant: "destructive",
         })
       }
     } catch (error) {
-      console.error("Error sending withdrawal request:", error)
+      console.error("Failed to initiate payment:", error)
       toast({
         title: "Error",
-        description: "Failed to send withdrawal request.",
+        description: "Failed to initiate payment",
         variant: "destructive",
       })
     }
   }
 
+  const handlePaymentSuccess = async (response: any) => {
+    try {
+      const verifyResponse = await fetch("/api/payments/verify", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(response),
+      })
+
+      if (verifyResponse.ok) {
+        toast({
+          title: "Success",
+          description: "Funds added successfully to your wallet",
+        })
+        setAddFundsAmount("")
+        setPaymentOrder(null)
+        fetchWalletData()
+      } else {
+        toast({
+          title: "Error",
+          description: "Payment verification failed",
+          variant: "destructive",
+        })
+      }
+    } catch (error) {
+      console.error("Payment verification failed:", error)
+      toast({
+        title: "Error",
+        description: "Payment verification failed",
+        variant: "destructive",
+      })
+    }
+  }
+
+  const handlePaymentError = (error: any) => {
+    console.error("Payment failed:", error)
+    toast({
+      title: "Payment Failed",
+      description: error.description || "Payment failed. Please try again.",
+      variant: "destructive",
+    })
+    setPaymentOrder(null)
+  }
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat("en-IN", {
+      style: "currency",
+      currency: "INR",
+      maximumFractionDigits: 0,
+    }).format(amount)
+  }
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString("en-IN", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    })
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50 py-12">
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="max-w-6xl mx-auto">
+      <div className="container mx-auto px-4">
+        <div className="max-w-7xl mx-auto">
           {/* Header */}
-          <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold mb-2">Wallet & Earnings</h1>
-            <p className="text-gray-600">Manage your campaign budgets and track payments</p>
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8">
+            <div>
+              <h1 className="text-3xl font-bold mb-2">Wallet & Payments</h1>
+              <p className="text-gray-600">Manage your campaign budgets and track payments</p>
+            </div>
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button className="mt-4 md:mt-0">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Funds
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Add Funds to Wallet</DialogTitle>
+                  <DialogDescription>Add money to your wallet to fund campaigns and pay influencers</DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="amount">Amount (₹)</Label>
+                    <Input
+                      id="amount"
+                      type="number"
+                      min="100"
+                      value={addFundsAmount}
+                      onChange={(e) => setAddFundsAmount(e.target.value)}
+                      placeholder="Enter amount (minimum ₹100)"
+                    />
+                  </div>
+                  {paymentOrder ? (
+                    <RazorpayCheckout
+                      orderId={paymentOrder.orderId}
+                      amount={paymentOrder.amount}
+                      currency={paymentOrder.currency}
+                      onSuccess={handlePaymentSuccess}
+                      onError={handlePaymentError}
+                    >
+                      Pay {formatCurrency(paymentOrder.amount / 100)}
+                    </RazorpayCheckout>
+                  ) : (
+                    <Button onClick={initiateAddFunds} className="w-full">
+                      Proceed to Payment
+                    </Button>
+                  )}
+                </div>
+              </DialogContent>
+            </Dialog>
           </div>
 
-          {/* Balance Overview */}
+          {/* Stats Overview */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-            <Card className="shadow-md">
-              <CardHeader>
-                <CardTitle className="text-lg">Available Balance</CardTitle>
-                <CardDescription>Ready to withdraw</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-baseline gap-2">
-                  <span className="text-3xl font-bold">$2,450.00</span>
-                  <Badge className="bg-green-100 text-green-700">+$150 this week</Badge>
+            <Card>
+              <CardContent className="pt-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="p-2 bg-purple-100 rounded-lg">
+                    <Wallet className="h-6 w-6 text-purple-600" />
+                  </div>
+                  <Badge className="bg-green-100 text-green-700">
+                    <ArrowUpRight className="h-3 w-3 mr-1" />
+                    Available
+                  </Badge>
                 </div>
+                <h3 className="text-2xl font-bold mb-1">{walletData ? formatCurrency(walletData.balance) : "₹0"}</h3>
+                <p className="text-sm text-gray-600">Wallet Balance</p>
               </CardContent>
             </Card>
 
-            <Card className="shadow-md">
-              <CardHeader>
-                <CardTitle className="text-lg">Pending Earnings</CardTitle>
-                <CardDescription>From active campaigns</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-baseline gap-2">
-                  <span className="text-3xl font-bold">$850.00</span>
-                  <Badge className="bg-yellow-100 text-yellow-700">2 campaigns</Badge>
+            <Card>
+              <CardContent className="pt-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="p-2 bg-blue-100 rounded-lg">
+                    <TrendingUp className="h-6 w-6 text-blue-600" />
+                  </div>
+                  <Badge className="bg-blue-100 text-blue-700">
+                    <ArrowDownRight className="h-3 w-3 mr-1" />
+                    This Month
+                  </Badge>
                 </div>
+                <h3 className="text-2xl font-bold mb-1">{walletData ? formatCurrency(walletData.totalSpent) : "₹0"}</h3>
+                <p className="text-sm text-gray-600">Total Spent</p>
               </CardContent>
             </Card>
 
-            <Card className="shadow-md">
-              <CardHeader>
-                <CardTitle className="text-lg">Total Earnings</CardTitle>
-                <CardDescription>All time</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-baseline gap-2">
-                  <span className="text-3xl font-bold">$12,450.00</span>
-                  <Badge className="bg-blue-100 text-blue-700">+24% this month</Badge>
+            <Card>
+              <CardContent className="pt-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="p-2 bg-green-100 rounded-lg">
+                    <Users className="h-6 w-6 text-green-600" />
+                  </div>
+                  <Badge className="bg-green-100 text-green-700">
+                    <ArrowUpRight className="h-3 w-3 mr-1" />
+                    Active
+                  </Badge>
                 </div>
+                <h3 className="text-2xl font-bold mb-1">{walletData ? walletData.activeCampaigns : 0}</h3>
+                <p className="text-sm text-gray-600">Active Campaigns</p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardContent className="pt-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="p-2 bg-orange-100 rounded-lg">
+                    <Clock className="h-6 w-6 text-orange-600" />
+                  </div>
+                  <Badge className="bg-orange-100 text-orange-700">
+                    <Clock className="h-3 w-3 mr-1" />
+                    Pending
+                  </Badge>
+                </div>
+                <h3 className="text-2xl font-bold mb-1">
+                  {walletData ? formatCurrency(walletData.pendingPayments) : "₹0"}
+                </h3>
+                <p className="text-sm text-gray-600">Pending Payments</p>
               </CardContent>
             </Card>
           </div>
 
-          {/* Main Content */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Left Column - Withdrawal Methods */}
-            <div className="space-y-6">
-              <Card className="shadow-md">
-                <CardHeader>
-                  <CardTitle>Withdrawal Methods</CardTitle>
-                  <CardDescription>Add or manage your payment methods</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {/* Bank Account */}
-                  <div className="flex items-center justify-between p-4 border rounded-lg">
+          {/* Transaction History */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Transaction History</CardTitle>
+              <CardDescription>Recent payments and transactions</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {walletData?.transactions.map((transaction) => (
+                  <div key={transaction._id} className="flex items-center justify-between p-4 border rounded-lg">
                     <div className="flex items-center gap-4">
-                      <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
-                        <Building2 className="h-5 w-5 text-blue-600" />
+                      <div
+                        className={`p-2 rounded-lg ${
+                          transaction.type === "wallet_topup"
+                            ? "bg-green-100"
+                            : transaction.type === "campaign_payment"
+                              ? "bg-blue-100"
+                              : "bg-orange-100"
+                        }`}
+                      >
+                        {transaction.type === "wallet_topup" ? (
+                          <ArrowUpRight className="h-6 w-6 text-green-600" />
+                        ) : transaction.type === "campaign_payment" ? (
+                          <Users className="h-6 w-6 text-blue-600" />
+                        ) : (
+                          <Clock className="h-6 w-6 text-orange-600" />
+                        )}
                       </div>
                       <div>
-                        <h4 className="font-medium">HDFC Bank</h4>
-                        <p className="text-sm text-gray-500">•••• 4567</p>
+                        <h4 className="font-medium">{transaction.description}</h4>
+                        <p className="text-sm text-gray-600">{formatDate(transaction.createdAt)}</p>
                       </div>
                     </div>
-                    <Badge className="bg-green-100 text-green-700">Default</Badge>
-                  </div>
-
-                  {/* PayPal */}
-                  <div className="flex items-center justify-between p-4 border rounded-lg">
-                    <div className="flex items-center gap-4">
-                      <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
-                        <CreditCard className="h-5 w-5 text-blue-600" />
-                      </div>
-                      <div>
-                        <h4 className="font-medium">PayPal</h4>
-                        <p className="text-sm text-gray-500">john@example.com</p>
+                    <div className="text-right">
+                      <p className={`font-medium ${transaction.amount > 0 ? "text-green-600" : "text-red-600"}`}>
+                        {transaction.amount > 0 ? "+" : ""}
+                        {formatCurrency(transaction.amount)}
+                      </p>
+                      <div className="flex items-center gap-2">
+                        <Badge
+                          className={
+                            transaction.status === "completed"
+                              ? "bg-green-100 text-green-700"
+                              : transaction.status === "pending"
+                                ? "bg-yellow-100 text-yellow-700"
+                                : "bg-red-100 text-red-700"
+                          }
+                        >
+                          {transaction.status === "completed" && <CheckCircle className="h-3 w-3 mr-1" />}
+                          {transaction.status === "pending" && <Clock className="h-3 w-3 mr-1" />}
+                          {transaction.status === "failed" && <AlertCircle className="h-3 w-3 mr-1" />}
+                          {transaction.status}
+                        </Badge>
                       </div>
                     </div>
-                    <Button variant="outline" size="sm">
-                      Set Default
-                    </Button>
                   </div>
-
-                  <Button variant="outline" className="w-full">
-                    <CreditCard className="h-4 w-4 mr-2" />
-                    Add New Method
-                  </Button>
-                </CardContent>
-              </Card>
-
-              {/* Quick Actions */}
-              <Card className="shadow-md">
-                <CardHeader>
-                  <CardTitle>Quick Actions</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <Dialog>
-                    <DialogTrigger asChild>
-                      <Button className="w-full">
-                        <ArrowUpRight className="h-4 w-4 mr-2" />
-                        Withdraw Funds
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent className="sm:max-w-[425px]">
-                      <DialogHeader>
-                        <AlertDialogTitle>Withdraw Funds</AlertDialogTitle>
-                        <DialogDescription>Enter the amount to withdraw and select a payment method.</DialogDescription>
-                      </DialogHeader>
-                      <div className="grid gap-4 py-4">
-                        <div className="grid grid-cols-4 items-center gap-4">
-                          <Label htmlFor="amount" className="text-right">
-                            Amount
-                          </Label>
-                          <Input
-                            type="number"
-                            id="amount"
-                            value={withdrawalAmount}
-                            onChange={(e) => setWithdrawalAmount(e.target.value)}
-                            className="col-span-3"
-                          />
-                        </div>
-                        <div className="grid grid-cols-4 items-center gap-4">
-                          <Label htmlFor="paymentMethod" className="text-right">
-                            Payment Method
-                          </Label>
-                          <Select onValueChange={setSelectedPaymentMethod}>
-                            <SelectTrigger className="col-span-3">
-                              <SelectValue placeholder="Select a payment method" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="bank">Bank Account</SelectItem>
-                              <SelectItem value="paypal">PayPal</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      </div>
-                      <Button onClick={handleWithdrawalRequest}>Request Withdrawal</Button>
-                    </DialogContent>
-                  </Dialog>
-                  <Button variant="outline" className="w-full">
-                    <History className="h-4 w-4 mr-2" />
-                    View Transaction History
-                  </Button>
-                  <Button variant="destructive" className="w-full flex items-center justify-center gap-2">
-                    <ShieldCheck className="h-4 w-4 mr-2" />
-                    Security Check
-                  </Button>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Right Column - Transaction History */}
-            <div className="lg:col-span-2">
-              <Card className="shadow-md">
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <CardTitle>Transaction History</CardTitle>
-                      <CardDescription>Your recent earnings and withdrawals</CardDescription>
-                    </div>
-                    <Button variant="outline" size="sm">
-                      <TrendingUp className="h-4 w-4 mr-2" />
-                      View Analytics
-                    </Button>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead className="w-[100px]">Type</TableHead>
-                        <TableHead>Description</TableHead>
-                        <TableHead>Date</TableHead>
-                        <TableHead className="text-right">Amount</TableHead>
-                        <TableHead>Platform</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {transactions.map((transaction) => (
-                        <TableRow key={transaction.id}>
-                          <TableCell>{transaction.type === "income" ? "Income" : "Withdrawal"}</TableCell>
-                          <TableCell>{transaction.description}</TableCell>
-                          <TableCell>{transaction.date}</TableCell>
-                          <TableCell className="text-right">
-                            {transaction.amount > 0
-                              ? `+$${transaction.amount.toFixed(2)}`
-                              : `-$${Math.abs(transaction.amount).toFixed(2)}`}
-                          </TableCell>
-                          <TableCell>{transaction.platform}</TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
     </div>

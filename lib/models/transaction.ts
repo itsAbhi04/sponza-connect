@@ -11,7 +11,7 @@ export interface IRazorpayDetails {
 export interface ITransaction {
   _id: string
   userId: string
-  type: "campaign_payment" | "withdrawal" | "referral_reward" | "subscription"
+  type: "campaign_payment" | "withdrawal" | "referral_reward" | "subscription" | "wallet_topup" | "platform_fee"
   amount: number
   status: "pending" | "completed" | "failed"
   razorpayDetails: IRazorpayDetails
@@ -53,7 +53,7 @@ const transactionSchema = new Schema<ITransaction>(
     },
     type: {
       type: String,
-      enum: ["campaign_payment", "withdrawal", "referral_reward", "subscription"],
+      enum: ["campaign_payment", "withdrawal", "referral_reward", "subscription", "wallet_topup", "platform_fee"],
       required: true,
     },
     amount: {

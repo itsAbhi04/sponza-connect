@@ -5,9 +5,30 @@ export interface IWallet {
   userId: string
   balance: number
   transactions: string[]
+  paymentMethods: {
+    type: "bank" | "upi" | "paypal"
+    details: Record<string, any>
+    isDefault: boolean
+  }[]
   createdAt: Date
   updatedAt: Date
 }
+
+const paymentMethodSchema = new Schema({
+  type: {
+    type: String,
+    enum: ["bank", "upi", "paypal"],
+    required: true,
+  },
+  details: {
+    type: Schema.Types.Mixed,
+    required: true,
+  },
+  isDefault: {
+    type: Boolean,
+    default: false,
+  },
+})
 
 const walletSchema = new Schema<IWallet>(
   {
@@ -28,6 +49,7 @@ const walletSchema = new Schema<IWallet>(
         ref: "Transaction",
       },
     ],
+    paymentMethods: [paymentMethodSchema],
   },
   {
     timestamps: true,

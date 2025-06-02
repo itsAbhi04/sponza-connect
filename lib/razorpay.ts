@@ -39,18 +39,45 @@ export async function createOrder(amount: number, currency = "INR", receipt?: st
   }
 }
 
-export async function createSubscription(planId: string, customerId: string, totalCount?: number) {
+export async function createRazorpaySubscription(params: {
+  plan_id: string
+  customer_name: string
+  customer_email: string
+  customer_contact: string
+  total_count: number
+}) {
   try {
+    // First create a customer
+    const customer = await razorpay.customers.create({
+      name: params.customer_name,
+      email: params.customer_email,
+      contact: params.customer_contact,
+    })
+
+    // Then create a subscription
     const subscription = await razorpay.subscriptions.create({
-      plan_id: planId,
-      customer_id: customerId,
-      total_count: totalCount,
+      plan_id: params.plan_id,
+      customer_id: customer.id,
+      total_count: params.total_count,
       quantity: 1,
     })
+
     return subscription
   } catch (error) {
     console.error("Create subscription error:", error)
     throw new Error("Failed to create subscription")
+  }
+}
+
+export async function cancelRazorpaySubscription(subscriptionId: string) {
+  try {
+    const subscription = await razorpay.subscriptions.cancel(subscriptionId, {
+      cancel_at_cycle_end: true,
+    })
+    return subscription
+  } catch (error) {
+    console.error("Cancel subscription error:", error)
+    throw new Error("Failed to cancel subscription")
   }
 }
 
@@ -68,13 +95,7 @@ export async function createCustomer(name: string, email: string, contact?: stri
   }
 }
 
-
-export async function createPayout(
-  amount: number,
-  accountNumber: string,
-  ifsc: string,
-  purpose = "payout"
-) {
+export async function createPayout(amount: number, accountNumber: string, ifsc: string, purpose = "payout") {
   try {
     const response = await axios.post(
       "https://api.razorpay.com/v1/payouts",
@@ -102,7 +123,7 @@ export async function createPayout(
         headers: {
           "Content-Type": "application/json",
         },
-      }
+      },
     )
 
     return response.data
@@ -111,7 +132,6 @@ export async function createPayout(
     throw new Error("Failed to create payout")
   }
 }
-
 
 export async function verifyPayment(orderId: string, paymentId: string, signature: string): Promise<boolean> {
   try {
@@ -129,22 +149,40 @@ export const SUBSCRIPTION_PLANS = {
   premium_monthly: {
     id: "plan_premium_monthly",
     name: "Premium Monthly",
-    amount: 99900, // ₹999 in paise
+    amount: 299900, // ₹2,999 in paise
     currency: "INR",
     interval: 1,
     period: "monthly",
+    features: [
+      "Unlimited campaigns",
+      "Advanced analytics",
+      "Priority support",
+      "Premium verification",
+      "Custom branding",
+    ],
   },
   premium_annual: {
     id: "plan_premium_annual",
     name: "Premium Annual",
-    amount: 999900, // ₹9999 in paise
+    amount: 2999900, // ₹29,999 in paise
     currency: "INR",
     interval: 1,
     period: "yearly",
+    features: [
+      "Everything in Premium Monthly",
+      "Dedicated account manager",
+      "Custom integrations",
+      "White-label options",
+      "API access",
+    ],
   },
-}
-
-export const createRazorpaySubscription = async (params: any) => {
-  // Implementation for creating Razorpay subscription
-  // Add your logic here
+  free: {
+    id: "plan_free",
+    name: "Free",
+    amount: 0,
+    currency: "INR",
+    interval: 0,
+    period: "free",
+    features: ["Up to 3 campaigns per month", "Basic analytics", "Email support", "Standard verification"],
+  },
 }

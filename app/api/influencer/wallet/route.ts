@@ -1,7 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { Wallet } from "@/lib/models/wallet"
 import { Transaction } from "@/lib/models/transaction"
-import { Campaign } from "@/lib/models/campaign"
+import { Application } from "@/lib/models/application"
 import { connectDB } from "@/lib/db"
 import { verifyToken } from "@/lib/auth"
 
@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
     }
 
     const decoded = verifyToken(token)
-    if (!decoded || decoded.role !== "brand") {
+    if (!decoded || decoded.role !== "influencer") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
@@ -33,53 +33,65 @@ export async function GET(request: NextRequest) {
     // Get recent transactions
     const transactions = await Transaction.find({ userId: decoded.userId }).sort({ createdAt: -1 }).limit(20)
 
-    // Get campaign statistics
-    const activeCampaigns = await Campaign.countDocuments({
-      brandId: decoded.userId,
-      status: { $in: ["published", "in-progress"] },
-    })
-
-    const totalSpent = await Transaction.aggregate([
+    // Get earnings statistics
+    const totalEarnings = await Transaction.aggregate([
       {
         $match: {
           userId: decoded.userId,
           type: "campaign_payment",
           status: "completed",
+          amount: { $gt: 0 },
         },
       },
       {
         $group: {
           _id: null,
-          total: { $sum: { $abs: "$amount" } },
+          total: { $sum: "$amount" },
         },
       },
     ])
 
-    const pendingPayments = await Transaction.aggregate([
+    const pendingEarnings = await Application.aggregate([
       {
         $match: {
-          userId: decoded.userId,
-          type: "campaign_payment",
-          status: "pending",
+          influencerId: decoded.userId,
+          status: "completed",
+          paymentStatus: "pending",
         },
+      },
+      {
+        $lookup: {
+          from: "campaigns",
+          localField: "campaignId",
+          foreignField: "_id",
+          as: "campaign",
+        },
+      },
+      {
+        $unwind: "$campaign",
       },
       {
         $group: {
           _id: null,
-          total: { $sum: { $abs: "$amount" } },
+          total: { $sum: "$agreedAmount" },
         },
       },
     ])
+
+    const activeCampaigns = await Application.countDocuments({
+      influencerId: decoded.userId,
+      status: { $in: ["accepted", "in-progress"] },
+    })
 
     return NextResponse.json({
       balance: wallet.balance,
-      totalSpent: totalSpent[0]?.total || 0,
+      totalEarnings: totalEarnings[0]?.total || 0,
+      pendingEarnings: pendingEarnings[0]?.total || 0,
       activeCampaigns,
-      pendingPayments: pendingPayments[0]?.total || 0,
       transactions,
     })
   } catch (error) {
-    console.error("Get brand wallet error:", error)
+    console.error("Get influencer wallet error:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }

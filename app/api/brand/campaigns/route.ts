@@ -1,7 +1,8 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { connectDB } from "@/lib/db"
 import { verifyToken } from "@/lib/auth"
-import Campaign from "@/lib/models/campaign"
+import { Campaign } from "@/lib/models/campaign"
+import { Subscription } from "@/lib/models/subscription"
 import { z } from "zod"
 
 const createCampaignSchema = z.object({
@@ -49,7 +50,7 @@ export async function GET(request: NextRequest) {
   try {
     await connectDB()
 
-    const token = request.cookies.get("token")?.value
+    const token = request.cookies.get("auth-token")?.value
     if (!token) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
@@ -96,7 +97,7 @@ export async function POST(request: NextRequest) {
   try {
     await connectDB()
 
-    const token = request.cookies.get("token")?.value
+    const token = request.cookies.get("auth-token")?.value
     if (!token) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
@@ -108,6 +109,57 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json()
     const validatedData = createCampaignSchema.parse(body)
+
+    // Check subscription status and campaign limits
+    const activeSubscription = await Subscription.findOne({
+      userId: decoded.userId,
+      status: "active",
+    })
+
+    if (!activeSubscription) {
+      return NextResponse.json(
+        {
+          error: "No active subscription found. Please subscribe to create campaigns.",
+          code: "NO_SUBSCRIPTION",
+        },
+        { status: 403 },
+      )
+    }
+
+    // Check campaign limits based on subscription type
+    const activeCampaignsCount = await Campaign.countDocuments({
+      brandId: decoded.userId,
+      status: { $in: ["draft", "published", "in-progress"] },
+    })
+
+    if (activeSubscription.planType === "free" && activeCampaignsCount >= 3) {
+      return NextResponse.json(
+        {
+          error: "Free plan allows maximum 3 active campaigns. Please upgrade your subscription.",
+          code: "CAMPAIGN_LIMIT_REACHED",
+        },
+        { status: 403 },
+      )
+    }
+
+    // Check budget limits based on subscription
+    const minBudget = 1000 // ₹1,000
+    const maxBudget =
+      activeSubscription.planType === "free"
+        ? 50000
+        : activeSubscription.planType === "premium_monthly"
+          ? 500000
+          : 2000000 // ₹50K, ₹5L, or ₹20L
+
+    if (validatedData.budget < minBudget || validatedData.budget > maxBudget) {
+      return NextResponse.json(
+        {
+          error: `Campaign budget must be between ₹${minBudget} and ₹${maxBudget} for your subscription plan.`,
+          code: "BUDGET_LIMIT",
+        },
+        { status: 400 },
+      )
+    }
 
     const campaign = new Campaign({
       ...validatedData,
