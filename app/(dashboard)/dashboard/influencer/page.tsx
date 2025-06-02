@@ -26,7 +26,6 @@ import {
   BarChart3,
   Wallet,
   TrendingDown,
-  LogOut,
 } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
@@ -506,9 +505,7 @@ export default function InfluencerDashboard() {
                       <div key={campaign._id} className="p-3 border rounded-lg hover:bg-gray-50 transition-colors">
                         <div className="flex items-center justify-between mb-2">
                           <h4 className="font-medium text-sm line-clamp-1">{campaign.title}</h4>
-                          <Badge variant="secondary" className="text-xs">
-                            {campaign.matchScore}% match
-                          </Badge>
+                          <Badge variant="secondary">{campaign.matchScore}% match</Badge>
                         </div>
                         <p className="text-xs text-gray-600 mb-2">By {campaign.brandId?.name}</p>
                         <div className="flex items-center justify-between">
@@ -568,17 +565,58 @@ export default function InfluencerDashboard() {
           </div>
         </TabsContent>
 
-        {/* Other tab contents remain the same but use real data from the APIs */}
-        <TabsContent value="performance">
+        <TabsContent value="referrals">
           <Card>
             <CardHeader>
-              <CardTitle>Performance Overview</CardTitle>
-              <CardDescription>Detailed performance metrics and analytics</CardDescription>
+              <CardTitle>Referral Program</CardTitle>
+              <CardDescription>Earn rewards by inviting friends to Sponza</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="text-center py-8">
+                <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <p className="text-gray-500 mb-4">Share your referral code and earn rewards</p>
+                <Link href="/dashboard/influencer/referrals">
+                  <Button>
+                    <Eye className="h-4 w-4 mr-2" />
+                    View Referrals
+                  </Button>
+                </Link>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="insights">
+          <Card>
+            <CardHeader>
+              <CardTitle>AI Insights</CardTitle>
+              <CardDescription>Get personalized insights to improve your performance</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="text-center py-8">
+                <Lightbulb className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <p className="text-gray-500 mb-4">Unlock AI-powered insights to boost your influence</p>
+                <Link href="/dashboard/influencer/insights">
+                  <Button>
+                    <Eye className="h-4 w-4 mr-2" />
+                    View Insights
+                  </Button>
+                </Link>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="analytics">
+          <Card>
+            <CardHeader>
+              <CardTitle>Advanced Analytics</CardTitle>
+              <CardDescription>Detailed performance insights and trends</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="text-center py-8">
                 <BarChart3 className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <p className="text-gray-500 mb-4">View your detailed performance metrics</p>
+                <p className="text-gray-500 mb-4">Track your performance with advanced analytics</p>
                 <Link href="/dashboard/influencer/analytics">
                   <Button>
                     <BarChart3 className="h-4 w-4 mr-2" />
@@ -589,55 +627,7 @@ export default function InfluencerDashboard() {
             </CardContent>
           </Card>
         </TabsContent>
-
-        <TabsContent value="campaigns">
-          <Card>
-            <CardHeader>
-              <CardTitle>Available Campaigns</CardTitle>
-              <CardDescription>Browse and apply to campaigns that match your profile</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="text-center py-8">
-                <Target className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <p className="text-gray-500 mb-4">Discover campaigns perfect for you</p>
-                <Link href="/dashboard/influencer/campaigns">
-                  <Button>
-                    <Eye className="h-4 w-4 mr-2" />
-                    Browse Campaigns
-                  </Button>
-                </Link>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="earnings">
-          <Card>
-            <CardHeader>
-              <CardTitle>Earnings & Payments</CardTitle>
-              <CardDescription>Track your earnings and manage withdrawals</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="text-center py-8">
-                <DollarSign className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <p className="text-gray-500 mb-4">Manage your earnings and payments</p>
-                <Link href="/dashboard/influencer/wallet">
-                  <Button>
-                    <Wallet className="h-4 w-4 mr-2" />
-                    View Wallet
-                  </Button>
-                </Link>
-              </div>
-            </CardContent>
-          </Card> 
-        </TabsContent>        
       </Tabs>
-      <div className="flex justify-end">
-        <Button variant="outline" onClick={handleLogout} className="mt-4">  
-          <LogOut className="h-4 w-4 mr-2" />
-          Logout
-        </Button>
-      </div>
     </div>
   )
 }

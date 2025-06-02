@@ -4,22 +4,49 @@ import { DialogTrigger } from "@/components/ui/dialog"
 
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { ArrowUpRight, Wallet, CreditCard, Building2, History, TrendingUp, ShieldCheck } from "lucide-react"
-import { useState } from "react"
+import { ArrowUpRight, CreditCard, Building2, History, TrendingUp, ShieldCheck } from "lucide-react"
+import { useState, useEffect } from "react"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Dialog, DialogContent, DialogDescription, DialogHeader } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, AlertDialogTitle } from "@/components/ui/dialog"
 import { useToast } from "@/components/ui/use-toast"
-import { AlertDialogTitle } from "@/components/ui/alert-dialog"
+import { useRouter } from "next/navigation"
+
+interface Transaction {
+  id: number
+  type: string
+  description: string
+  date: string
+  amount: number
+  platform: string
+}
 
 export default function WalletPage() {
+  const [transactions, setTransactions] = useState<Transaction[]>([])
   const [withdrawalAmount, setWithdrawalAmount] = useState("")
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState("")
   const { toast } = useToast()
+  const router = useRouter()
 
-  const handleWithdrawalRequest = () => {
+  useEffect(() => {
+    fetchTransactions()
+  }, [])
+
+  const fetchTransactions = async () => {
+    try {
+      const response = await fetch("/api/wallet/route")
+      if (response.ok) {
+        const data = await response.json()
+        setTransactions(data.transactions || [])
+      }
+    } catch (error) {
+      console.error("Error fetching transactions:", error)
+    }
+  }
+
+  const handleWithdrawalRequest = async () => {
     if (!withdrawalAmount || !selectedPaymentMethod) {
       toast({
         title: "Error",
@@ -29,41 +56,42 @@ export default function WalletPage() {
       return
     }
 
-    // Simulate withdrawal request
-    toast({
-      title: "Withdrawal Request Sent",
-      description: `Withdrawal request of $${withdrawalAmount} sent via ${selectedPaymentMethod}.`,
-    })
-    setWithdrawalAmount("")
-    setSelectedPaymentMethod("")
-  }
+    try {
+      const response = await fetch("/api/wallet/withdraw", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          amount: Number.parseFloat(withdrawalAmount),
+          methodId: selectedPaymentMethod,
+        }),
+      })
 
-  const transactions = [
-    {
-      id: 1,
-      type: "income",
-      description: "Fashion Brand Campaign",
-      date: "2 days ago",
-      amount: 500,
-      platform: "Instagram Reels",
-    },
-    {
-      id: 2,
-      type: "withdrawal",
-      description: "Withdrawal to Bank",
-      date: "1 week ago",
-      amount: -1000,
-      platform: "Bank Transfer",
-    },
-    {
-      id: 3,
-      type: "income",
-      description: "Tech Brand Campaign",
-      date: "2 weeks ago",
-      amount: 750,
-      platform: "YouTube Video",
-    },
-  ]
+      if (response.ok) {
+        toast({
+          title: "Withdrawal Request Sent",
+          description: `Withdrawal request of $${withdrawalAmount} sent via ${selectedPaymentMethod}.`,
+        })
+        setWithdrawalAmount("")
+        setSelectedPaymentMethod("")
+        router.refresh()
+      } else {
+        toast({
+          title: "Error",
+          description: "Failed to send withdrawal request.",
+          variant: "destructive",
+        })
+      }
+    } catch (error) {
+      console.error("Error sending withdrawal request:", error)
+      toast({
+        title: "Error",
+        description: "Failed to send withdrawal request.",
+        variant: "destructive",
+      })
+    }
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50 py-12">
@@ -134,7 +162,7 @@ export default function WalletPage() {
                         <Building2 className="h-5 w-5 text-blue-600" />
                       </div>
                       <div>
-                        <h3 className="font-semibold">Bank Account</h3>
+                        <h4 className="font-medium">HDFC Bank</h4>
                         <p className="text-sm text-gray-500">•••• 4567</p>
                       </div>
                     </div>
@@ -148,7 +176,7 @@ export default function WalletPage() {
                         <CreditCard className="h-5 w-5 text-blue-600" />
                       </div>
                       <div>
-                        <h3 className="font-semibold">PayPal</h3>
+                        <h4 className="font-medium">PayPal</h4>
                         <p className="text-sm text-gray-500">john@example.com</p>
                       </div>
                     </div>
@@ -157,8 +185,8 @@ export default function WalletPage() {
                     </Button>
                   </div>
 
-                  <Button className="w-full">
-                    <Wallet className="h-4 w-4 mr-2" />
+                  <Button variant="outline" className="w-full">
+                    <CreditCard className="h-4 w-4 mr-2" />
                     Add New Method
                   </Button>
                 </CardContent>
