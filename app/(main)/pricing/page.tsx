@@ -1,8 +1,68 @@
+import { Metadata } from "next";
+import { generateMetadata, generateViewport, schemas } from "@/lib/metadata";
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { CheckCircle, HelpCircle } from "lucide-react"
-import Link from "next/link"
+
+export const viewport = generateViewport();
+
+export const metadata: Metadata = generateMetadata({
+  title: "Pricing Plans",
+  description: "Choose the perfect Sponza plan for your influencer marketing needs. From startups to enterprises, find flexible pricing options with powerful features.",
+  keywords: [
+    "influencer marketing pricing",
+    "campaign management cost",
+    "brand collaboration plans",
+    "influencer platform pricing",
+    "marketing platform cost",
+    "enterprise pricing",
+    "startup plans",
+    "agency pricing",
+  ],
+  ogImage: "/og-pricing.jpg",
+  twitterImage: "/twitter-pricing.jpg",
+  schema: schemas.pricing([
+    {
+      name: "Free",
+      description: "Perfect for getting started",
+      price: 0,
+      currency: "INR",
+      features: [
+        "Up to 3 campaigns per month",
+        "Basic analytics",
+        "Email support",
+        "Standard verification",
+      ],
+    },
+    {
+      name: "Premium Monthly",
+      description: "For growing businesses",
+      price: 2999,
+      currency: "INR",
+      features: [
+        "Unlimited campaigns",
+        "Advanced analytics",
+        "Priority support",
+        "Premium verification",
+        "Custom branding",
+      ],
+    },
+    {
+      name: "Premium Annual",
+      description: "Save 17% with annual billing",
+      price: 29999,
+      currency: "INR",
+      features: [
+        "Everything in Premium Monthly",
+        "Dedicated account manager",
+        "Custom integrations",
+        "White-label options",
+        "API access",
+      ],
+    },
+  ]),
+});
 
 export default function PricingPage() {
   return (

@@ -1,182 +1,278 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Shield, Lock, Eye, Server, Key, AlertTriangle } from "lucide-react"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Shield, Key, AlertTriangle, Eye, FileCheck, Users } from "lucide-react";
 
 export default function SecurityPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50 py-12">
       <div className="container mx-auto px-4">
-        <div className="max-w-4xl mx-auto">
+        <div className="max-w-6xl mx-auto">
           <div className="text-center mb-12">
             <h1 className="text-4xl font-bold mb-4 bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
-              Security & Privacy
+              Security at Sponza
             </h1>
             <p className="text-xl text-gray-600">
-              Your security is our top priority. Learn about our comprehensive security measures and data protection policies.
+              Your data security is our top priority
             </p>
           </div>
 
-          {/* Security Features Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
-            <Card>
-              <CardHeader>
-                <Shield className="h-8 w-8 text-purple-600 mb-2" />
-                <CardTitle>Data Protection</CardTitle>
-                <CardDescription>How we protect your information</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <ul className="space-y-3 text-gray-600">
-                  <li className="flex items-start">
-                    <span className="mr-2">•</span>
-                    <span>End-to-end encryption for all sensitive data</span>
-                  </li>
-                  <li className="flex items-start">
-                    <span className="mr-2">•</span>
-                    <span>Regular security audits and penetration testing</span>
-                  </li>
-                  <li className="flex items-start">
-                    <span className="mr-2">•</span>
-                    <span>Compliance with global data protection regulations</span>
-                  </li>
-                </ul>
-              </CardContent>
-            </Card>
+          {/* Security Overview */}
+          <Card className="mb-12">
+            <CardHeader>
+              <div className="flex items-center space-x-2">
+                <Shield className="h-6 w-6 text-purple-600" />
+                <CardTitle>Security Overview</CardTitle>
+              </div>
+              <CardDescription>
+                Our comprehensive security measures protect your data
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div className="space-y-4">
+                  <h3 className="font-semibold text-lg">Infrastructure Security</h3>
+                  <ul className="space-y-2 text-sm text-gray-600">
+                    <li>• AWS Cloud Infrastructure with 99.99% uptime</li>
+                    <li>• Multi-region data replication</li>
+                    <li>• DDoS protection and mitigation</li>
+                    <li>• Regular security audits and penetration testing</li>
+                    <li>• Automated threat detection and response</li>
+                    <li>• 24/7 security monitoring</li>
+                  </ul>
+                </div>
+                <div className="space-y-4">
+                  <h3 className="font-semibold text-lg">Data Protection</h3>
+                  <ul className="space-y-2 text-sm text-gray-600">
+                    <li>• End-to-end encryption for all data in transit</li>
+                    <li>• AES-256 encryption for data at rest</li>
+                    <li>• Regular security backups</li>
+                    <li>• Data retention policies</li>
+                    <li>• GDPR and CCPA compliance</li>
+                    <li>• SOC 2 Type II certified</li>
+                  </ul>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
 
-            <Card>
-              <CardHeader>
-                <Lock className="h-8 w-8 text-blue-600 mb-2" />
-                <CardTitle>Account Security</CardTitle>
-                <CardDescription>Keeping your account safe</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <ul className="space-y-3 text-gray-600">
-                  <li className="flex items-start">
-                    <span className="mr-2">•</span>
-                    <span>Two-factor authentication (2FA)</span>
-                  </li>
-                  <li className="flex items-start">
-                    <span className="mr-2">•</span>
-                    <span>Secure password requirements and policies</span>
-                  </li>
-                  <li className="flex items-start">
-                    <span className="mr-2">•</span>
-                    <span>Session management and device tracking</span>
-                  </li>
-                </ul>
-              </CardContent>
-            </Card>
+          {/* Authentication & Access Control */}
+          <Card className="mb-12">
+            <CardHeader>
+              <div className="flex items-center space-x-2">
+                <Key className="h-6 w-6 text-blue-600" />
+                <CardTitle>Authentication & Access Control</CardTitle>
+              </div>
+              <CardDescription>
+                Multi-layered authentication and authorization
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="p-4 border rounded-lg">
+                    <h4 className="font-semibold mb-2">Multi-Factor Authentication</h4>
+                    <ul className="text-sm text-gray-600 space-y-1">
+                      <li>• SMS verification</li>
+                      <li>• Authenticator apps</li>
+                      <li>• Hardware security keys</li>
+                      <li>• Biometric authentication</li>
+                    </ul>
+                  </div>
+                  <div className="p-4 border rounded-lg">
+                    <h4 className="font-semibold mb-2">Role-Based Access</h4>
+                    <ul className="text-sm text-gray-600 space-y-1">
+                      <li>• Granular permissions</li>
+                      <li>• Team-based access</li>
+                      <li>• Audit logging</li>
+                      <li>• Session management</li>
+                    </ul>
+                  </div>
+                  <div className="p-4 border rounded-lg">
+                    <h4 className="font-semibold mb-2">API Security</h4>
+                    <ul className="text-sm text-gray-600 space-y-1">
+                      <li>• API key management</li>
+                      <li>• OAuth 2.0 support</li>
+                      <li>• Rate limiting</li>
+                      <li>• IP whitelisting</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
 
-            <Card>
-              <CardHeader>
-                <Eye className="h-8 w-8 text-green-600 mb-2" />
-                <CardTitle>Privacy Controls</CardTitle>
-                <CardDescription>Your data, your control</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <ul className="space-y-3 text-gray-600">
-                  <li className="flex items-start">
-                    <span className="mr-2">•</span>
-                    <span>Granular privacy settings for profile visibility</span>
-                  </li>
-                  <li className="flex items-start">
-                    <span className="mr-2">•</span>
-                    <span>Data export and deletion options</span>
-                  </li>
-                  <li className="flex items-start">
-                    <span className="mr-2">•</span>
-                    <span>Transparent data usage policies</span>
-                  </li>
-                </ul>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <Server className="h-8 w-8 text-orange-600 mb-2" />
-                <CardTitle>Infrastructure Security</CardTitle>
-                <CardDescription>Enterprise-grade security</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <ul className="space-y-3 text-gray-600">
-                  <li className="flex items-start">
-                    <span className="mr-2">•</span>
-                    <span>Cloud infrastructure with DDoS protection</span>
-                  </li>
-                  <li className="flex items-start">
-                    <span className="mr-2">•</span>
-                    <span>Regular backups and disaster recovery</span>
-                  </li>
-                  <li className="flex items-start">
-                    <span className="mr-2">•</span>
-                    <span>24/7 security monitoring and incident response</span>
-                  </li>
-                </ul>
-              </CardContent>
-            </Card>
-          </div>
+          {/* Data Privacy */}
+          <Card className="mb-12">
+            <CardHeader>
+              <div className="flex items-center space-x-2">
+                <Eye className="h-6 w-6 text-green-600" />
+                <CardTitle>Data Privacy</CardTitle>
+              </div>
+              <CardDescription>
+                How we protect and manage your data
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  <div>
+                    <h3 className="font-semibold mb-4">Data Processing</h3>
+                    <ul className="space-y-2 text-sm text-gray-600">
+                      <li>• Data minimization principles</li>
+                      <li>• Purpose limitation</li>
+                      <li>• Data subject rights</li>
+                      <li>• Privacy by design</li>
+                      <li>• Regular privacy impact assessments</li>
+                      <li>• Data processing agreements</li>
+                    </ul>
+                  </div>
+                  <div>
+                    <h3 className="font-semibold mb-4">Compliance</h3>
+                    <ul className="space-y-2 text-sm text-gray-600">
+                      <li>• GDPR compliance</li>
+                      <li>• CCPA/CPRA compliance</li>
+                      <li>• ISO 27001 certified</li>
+                      <li>• Regular compliance audits</li>
+                      <li>• Data protection officer</li>
+                      <li>• Privacy policy updates</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
 
           {/* Security Best Practices */}
-          <div className="mb-12">
-            <h2 className="text-2xl font-bold mb-6">Security Best Practices</h2>
-            <Card>
-              <CardContent className="pt-6">
-                <div className="space-y-6">
+          <Card className="mb-12">
+            <CardHeader>
+              <div className="flex items-center space-x-2">
+                <FileCheck className="h-6 w-6 text-orange-600" />
+                <CardTitle>Security Best Practices</CardTitle>
+              </div>
+              <CardDescription>
+                Guidelines for maintaining secure usage of our platform
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                   <div>
-                    <h3 className="font-semibold mb-2">Password Security</h3>
-                    <ul className="space-y-2 text-gray-600">
-                      <li>• Use strong, unique passwords for your account</li>
-                      <li>• Enable two-factor authentication</li>
-                      <li>• Never share your login credentials</li>
+                    <h3 className="font-semibold mb-4">Account Security</h3>
+                    <ul className="space-y-2 text-sm text-gray-600">
+                      <li>• Use strong, unique passwords</li>
+                      <li>• Enable MFA for all accounts</li>
+                      <li>• Regularly review account activity</li>
+                      <li>• Update security settings</li>
+                      <li>• Monitor API key usage</li>
+                      <li>• Report suspicious activity</li>
                     </ul>
                   </div>
                   <div>
-                    <h3 className="font-semibold mb-2">Account Protection</h3>
-                    <ul className="space-y-2 text-gray-600">
-                      <li>• Regularly review your account activity</li>
-                      <li>• Keep your contact information up to date</li>
-                      <li>• Log out when using shared devices</li>
-                    </ul>
-                  </div>
-                  <div>
-                    <h3 className="font-semibold mb-2">Safe Transactions</h3>
-                    <ul className="space-y-2 text-gray-600">
-                      <li>• Verify campaign details before accepting</li>
-                      <li>• Use secure payment methods</li>
-                      <li>• Report suspicious activity immediately</li>
+                    <h3 className="font-semibold mb-4">Data Management</h3>
+                    <ul className="space-y-2 text-sm text-gray-600">
+                      <li>• Regular data backups</li>
+                      <li>• Secure data sharing</li>
+                      <li>• Data classification</li>
+                      <li>• Access review procedures</li>
+                      <li>• Secure file handling</li>
+                      <li>• Data retention policies</li>
                     </ul>
                   </div>
                 </div>
-              </CardContent>
-            </Card>
-          </div>
+              </div>
+            </CardContent>
+          </Card>
 
-          {/* Security Incident Response */}
-          <div>
-            <h2 className="text-2xl font-bold mb-6">Security Incident Response</h2>
-            <Card>
-              <CardHeader>
-                <AlertTriangle className="h-8 w-8 text-red-600 mb-2" />
-                <CardTitle>Report Security Issues</CardTitle>
-                <CardDescription>
-                  If you notice any security concerns or suspicious activity, please report it immediately
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <p className="text-gray-600">
-                    Our security team is available 24/7 to investigate and respond to security incidents. We take all
-                    reports seriously and will work quickly to address any concerns.
-                  </p>
-                  <div className="bg-gray-50 p-4 rounded-lg">
-                    <h4 className="font-semibold mb-2">Contact Security Team</h4>
-                    <p className="text-gray-600">Email: security@sponza.com</p>
-                    <p className="text-gray-600">Emergency: +91 1234567890</p>
+          {/* Incident Response */}
+          <Card className="mb-12">
+            <CardHeader>
+              <div className="flex items-center space-x-2">
+                <AlertTriangle className="h-6 w-6 text-red-600" />
+                <CardTitle>Incident Response</CardTitle>
+              </div>
+              <CardDescription>
+                Our approach to security incidents
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="p-4 border rounded-lg">
+                    <h4 className="font-semibold mb-2">Detection</h4>
+                    <ul className="text-sm text-gray-600 space-y-1">
+                      <li>• 24/7 monitoring</li>
+                      <li>• Automated alerts</li>
+                      <li>• Threat intelligence</li>
+                      <li>• User reporting</li>
+                    </ul>
+                  </div>
+                  <div className="p-4 border rounded-lg">
+                    <h4 className="font-semibold mb-2">Response</h4>
+                    <ul className="text-sm text-gray-600 space-y-1">
+                      <li>• Dedicated response team</li>
+                      <li>• Incident classification</li>
+                      <li>• Containment procedures</li>
+                      <li>• Communication protocols</li>
+                    </ul>
+                  </div>
+                  <div className="p-4 border rounded-lg">
+                    <h4 className="font-semibold mb-2">Recovery</h4>
+                    <ul className="text-sm text-gray-600 space-y-1">
+                      <li>• System restoration</li>
+                      <li>• Data recovery</li>
+                      <li>• Post-incident review</li>
+                      <li>• Prevention measures</li>
+                    </ul>
                   </div>
                 </div>
-              </CardContent>
-            </Card>
-          </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Security Contact */}
+          <Card>
+            <CardHeader>
+              <div className="flex items-center space-x-2">
+                <Users className="h-6 w-6 text-purple-600" />
+                <CardTitle>Security Contact</CardTitle>
+              </div>
+              <CardDescription>
+                How to reach our security team
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <p className="text-sm text-gray-600">
+                  For security concerns, vulnerability reports, or security-related questions, please contact our security team:
+                </p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="p-4 border rounded-lg">
+                    <h4 className="font-semibold mb-2">Security Team</h4>
+                    <ul className="text-sm text-gray-600 space-y-1">
+                      <li>• Email: security@sponza.com</li>
+                      <li>• PGP Key: 0x1234567890ABCDEF</li>
+                      <li>• Response time: 24 hours</li>
+                    </ul>
+                  </div>
+                  <div className="p-4 border rounded-lg">
+                    <h4 className="font-semibold mb-2">Bug Bounty Program</h4>
+                    <ul className="text-sm text-gray-600 space-y-1">
+                      <li>• Platform: HackerOne</li>
+                      <li>• Rewards: Up to $10,000</li>
+                      <li>• Scope: All production systems</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
     </div>
-  )
+  );
 }

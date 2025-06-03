@@ -1,8 +1,31 @@
+import { Metadata } from 'next'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Target, Users, Award, Heart, Globe, Zap } from "lucide-react"
 import Link from "next/link"
+
+export const metadata: Metadata = {
+  title: 'About Sponza - Leading Influencer Marketing Platform',
+  description: 'Learn about Sponza\'s mission to democratize influencer marketing. Discover our story, values, and the team behind India\'s most trusted influencer marketing platform.',
+  openGraph: {
+    title: 'About Sponza - Leading Influencer Marketing Platform',
+    description: 'Learn about Sponza\'s mission to democratize influencer marketing. Discover our story, values, and the team behind India\'s most trusted influencer marketing platform.',
+    images: [
+      {
+        url: '/about-og.jpg',
+        width: 1200,
+        height: 630,
+        alt: 'About Sponza - Our Story and Mission'
+      }
+    ]
+  },
+  twitter: {
+    title: 'About Sponza - Leading Influencer Marketing Platform',
+    description: 'Learn about Sponza\'s mission to democratize influencer marketing. Discover our story, values, and the team behind India\'s most trusted influencer marketing platform.',
+    images: ['/about-twitter.jpg']
+  }
+}
 
 export default function AboutPage() {
   return (

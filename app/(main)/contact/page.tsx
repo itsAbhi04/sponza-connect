@@ -1,3 +1,4 @@
+import { Metadata } from 'next'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -5,6 +6,28 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Mail, Phone, MapPin, Clock } from "lucide-react"
+
+export const metadata: Metadata = {
+  title: 'Contact Sponza - Get in Touch with Our Team',
+  description: 'Contact Sponza\'s team for support, partnerships, or inquiries. We\'re here to help you with your influencer marketing needs. Reach out through email, phone, or our contact form.',
+  openGraph: {
+    title: 'Contact Sponza - Get in Touch with Our Team',
+    description: 'Contact Sponza\'s team for support, partnerships, or inquiries. We\'re here to help you with your influencer marketing needs.',
+    images: [
+      {
+        url: '/contact-og.jpg',
+        width: 1200,
+        height: 630,
+        alt: 'Contact Sponza - Get in Touch'
+      }
+    ]
+  },
+  twitter: {
+    title: 'Contact Sponza - Get in Touch with Our Team',
+    description: 'Contact Sponza\'s team for support, partnerships, or inquiries. We\'re here to help you with your influencer marketing needs.',
+    images: ['/contact-twitter.jpg']
+  }
+}
 
 export default function ContactPage() {
   return (

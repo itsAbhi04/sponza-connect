@@ -1,3 +1,4 @@
+import { Metadata } from 'next'
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -16,6 +17,28 @@ import {
   Award,
 } from "lucide-react"
 import Link from "next/link"
+
+export const metadata: Metadata = {
+  title: 'Features - Influencer Marketing Tools & Solutions',
+  description: 'Discover Sponza\'s powerful influencer marketing tools including AI-powered matching, campaign management, analytics, and secure payments. Streamline your influencer marketing campaigns.',
+  openGraph: {
+    title: 'Features - Influencer Marketing Tools & Solutions',
+    description: 'Discover Sponza\'s powerful influencer marketing tools including AI-powered matching, campaign management, analytics, and secure payments.',
+    images: [
+      {
+        url: '/features-og.jpg',
+        width: 1200,
+        height: 630,
+        alt: 'Sponza Features - Influencer Marketing Tools'
+      }
+    ]
+  },
+  twitter: {
+    title: 'Features - Influencer Marketing Tools & Solutions',
+    description: 'Discover Sponza\'s powerful influencer marketing tools including AI-powered matching, campaign management, analytics, and secure payments.',
+    images: ['/features-twitter.jpg']
+  }
+}
 
 export default function FeaturesPage() {
   return (
